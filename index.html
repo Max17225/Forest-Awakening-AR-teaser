@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Forest Awakening — Far Out Teaser</title>
+    <meta name="description" content="Plant a digital forest in your space. Forest Awakening WebAR teaser." />
+
+    <!--
+      ============================================================
+      PAGE LAYERS (bottom → top)
+      1. XR8 scripts → camera + SLAM (trees stay planted in the room)
+      2. #camerafeed → live AR (camera feed + Three.js forest)
+      3. #ui-layer → HUD stickers (logo, stats, title, Coming Soon)
+         pointer-events:none so taps hit the AR canvas underneath
+
+      Flow: one tap → dense forest grows (~8–9s) → live-ish stats
+      tick → Forest Awakening by Far Out → Coming Soon
+
+      GPS / weather are fetched on the loading screen (app.js), not
+      mid-AR, so the location prompt cannot break world tracking.
+      ============================================================
+    -->
+
+    <!--
+      AR ENGINE (8th Wall distributed binary)
+      Imagine: this is the "brain" that reads the phone camera and
+      figures out where the phone is in the room (SLAM).
+      data-preload-chunks="slam" = download world-tracking code first
+      so trees can stay planted when you walk around.
+    -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js"
+      async
+      crossorigin="anonymous"
+      data-preload-chunks="slam"
+    ></script>
+
+    <!-- AR helpers: loading screen, full-window canvas, error UI -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Shows a friendly page if this phone/browser can't run WebAR -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Soft motion for tree growth + HUD fades (not AR) -->
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syncopate:wght@700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/teaser.css" />
+  </head>
+  <body>
+    <!--
+      AR VIEWPORT
+      XR8 paints the real camera feed + Three.js trees into this canvas.
+      Taps land here → scene.js plants the grove on the SLAM floor.
+    -->
+    <canvas id="camerafeed"></canvas>
+
+    <!--
+      HUD OVERLAY (pointer-events: none so taps fall through to AR)
+      Visual story after one tap:
+        impact dashboard → Forest Awakening by Far Out → Coming Soon
+    -->
+    <div id="ui-layer" aria-live="polite">
+      <!-- Always-on brand chip: small + faint, top-right -->
+      <img
+        id="brand-logo"
+        class="brand-logo"
+        src="/assets/logo.png"
+        alt="Far Out"
+        onerror="this.onerror=null;this.src='/assets/logo.svg'"
+      />
+
+      <p class="instruction" id="instruction">Tap once to awaken the forest</p>
+
+      <!--
+        Live-ish environmental HUD:
+        - LOCAL TEMP starts from Open-Meteo (GPS) when available, then eases down a little
+        - CO₂ FILTERED starts at 0 kg and rises as trees grow (theatrical, per-tree sizes)
+        - AIR INDEX eases toward a clearer number
+      -->
+      <div class="dashboard" id="dashboard" aria-hidden="true">
+        <div class="status-text">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-message">Awaiting deployment</span>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">LOCAL TEMP</span>
+          <span class="stat-value warning" id="temp-val">—°C</span>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">CO₂ FILTERED</span>
+          <span class="stat-value warning" id="co2-val">0.0 kg</span>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">AIR INDEX</span>
+          <span class="stat-value warning" id="aqi-val">—</span>
+        </div>
+      </div>
+
+      <!-- Title beat: Forest Awakening + By + Far Out logo -->
+      <div class="reveal" id="reveal" aria-hidden="true">
+        <h1 class="reveal-title">Forest<br />Awakening</h1>
+        <div class="reveal-by">
+          <span class="reveal-by-label">By</span>
+          <img
+            class="reveal-logo"
+            src="/assets/logo.png"
+            alt="Far Out"
+            onerror="this.onerror=null;this.src='/assets/logo.svg'"
+          />
+        </div>
+        <p class="coming-soon" id="coming-soon">Coming Soon…</p>
+      </div>
+
+      <p class="privacy" id="privacy">
+        Camera for AR. Location (if allowed) only fetches local temperature — nothing is stored.
+      </p>
+
+      <p class="attribution">AR engine by Niantic Spatial / 8th Wall</p>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,322 @@
+/*
+  ============================================================
+  teaser.css — HUD styling for the Forest Awakening AR teaser
+
+  Mental model:
+  - #camerafeed (in index.html) = the "window" into AR
+  - #ui-layer = glass stickers on that window (logo, stats, titles)
+  - pointer-events: none on the HUD so your finger taps the AR
+    canvas underneath, not these labels
+  ============================================================
+*/
+
+:root {
+  --lime: #ccff00;
+  --teal: #00ffaa;
+  --warn: #ffdd00;
+  --danger: #ff3366;
+  --panel: rgba(10, 15, 20, 0.78);
+  --font: 'Space Mono', ui-monospace, monospace;
+  --display: 'Syncopate', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+  Official 8th Wall placeground uses a -1px body margin so the AR
+  canvas truly edge-to-edges on mobile (avoids black letterbox strips).
+*/
+html,
+body {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: -1px 0 0 0 !important;
+  padding: 0;
+  background: #000;
+  font-family: var(--font);
+  color: var(--lime);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: none;
+}
+
+/* Full-bleed AR canvas under the HUD */
+#camerafeed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+
+#ui-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/*
+  Far Out mark — always visible, quiet branding:
+  top-right, small, slightly see-through so it doesn't fight the forest.
+*/
+.brand-logo {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  height: 28px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.6));
+}
+
+/* First-screen hint — disappears when the grove is planted */
+.instruction {
+  position: absolute;
+  bottom: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 12px 18px;
+  max-width: 16rem;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  line-height: 1.45;
+  text-transform: uppercase;
+  color: var(--lime);
+  background: rgba(204, 255, 0, 0.12);
+  border: 1px solid rgba(204, 255, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 4px;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.instruction.is-hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+}
+
+/*
+  Impact dashboard — slides in after the grove starts growing.
+  Shows theatrical temp / CO₂ / air-quality numbers (not real sensors).
+*/
+.dashboard {
+  position: absolute;
+  top: max(12%, calc(env(safe-area-inset-top) + 56px));
+  left: 5%;
+  right: 5%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 18px 20px;
+  background: var(--panel);
+  border: 1px solid rgba(0, 255, 170, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(-18px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.dashboard.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.status-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 10px var(--teal);
+  flex-shrink: 0;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #aaa;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.stat-value.warning {
+  color: var(--danger);
+}
+
+.stat-value.drop {
+  color: var(--teal);
+}
+
+/*
+  End title card — centered over the living forest.
+  "Coming Soon" fades in after the by-line logo.
+*/
+.reveal {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  width: min(92vw, 360px);
+  transform: translate(-50%, -40%) scale(0.92);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1s ease, transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.reveal-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(26px, 8vw, 40px);
+  font-weight: 700;
+  letter-spacing: 4px;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 0 20px rgba(0, 255, 170, 0.75),
+    0 0 40px rgba(0, 255, 170, 0.35);
+}
+
+.reveal-by {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.reveal-by-label {
+  font-size: 11px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.reveal-logo {
+  height: 36px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(204, 255, 0, 0.35));
+}
+
+.coming-soon {
+  margin: 28px 0 0;
+  padding: 12px 22px;
+  display: inline-block;
+  font-size: clamp(14px, 4.2vw, 18px);
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #0a1208;
+  background: linear-gradient(180deg, #e8ff66 0%, #ccff00 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  box-shadow:
+    0 0 24px rgba(204, 255, 0, 0.55),
+    0 8px 28px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  transition: opacity 0.85s ease, transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.coming-soon.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: comingSoonPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes comingSoonPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px rgba(204, 255, 0, 0.45),
+      0 8px 28px rgba(0, 0, 0, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 36px rgba(204, 255, 0, 0.85),
+      0 8px 28px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.privacy {
+  position: absolute;
+  bottom: max(48px, calc(env(safe-area-inset-bottom) + 36px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90vw, 320px);
+  margin: 0;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: rgba(204, 255, 0, 0.45);
+  line-height: 1.4;
+}
+
+.privacy.is-hidden {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.attribution {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
