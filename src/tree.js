@@ -283,6 +283,44 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
   const fireflies = []
   const animate = typeof window !== 'undefined' && window.anime ? window.anime : null
 
+  /** Snap finals, detach anime, freeze matrices — stops post-grow “shake when idle” */
+  const hardFreeze = () => {
+    if (animate) {
+      animate.remove(stem.scale)
+      animate.remove(firstLeaves.scale)
+      animate.remove(trunk.scale)
+      animate.remove(trunk.position)
+      animate.remove(glow)
+      leaves.forEach((leaf) => animate.remove(leaf.scale))
+    }
+
+    stem.visible = false
+    firstLeaves.visible = false
+    trunk.visible = true
+    trunk.scale.set(1, 1, 1)
+    trunk.position.y = trunkHeight / 2
+    canopy.visible = true
+    leaves.forEach((leaf) => {
+      const s = leaf.userData.targetScale ?? 1
+      leaf.scale.setScalar(s)
+    })
+    // Point lights + shadow casters shimmer when SLAM camera micro-moves — kill both
+    glow.intensity = 0
+    glow.visible = false
+
+    // Bake matrices BEFORE disabling autoUpdate (Three skips updateMatrix when autoUpdate is false)
+    group.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.castShadow = false
+        obj.receiveShadow = false
+      }
+      obj.updateMatrix()
+      obj.matrixAutoUpdate = false
+    })
+    group.updateMatrixWorld(true)
+    frozen = true
+  }
+
   const beginGrowth = () => {
     // PHASE 1 — Sprout (~0–1.6s)
     if (animate) {
@@ -342,7 +380,7 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
       }
     }, 1600)
 
-    // PHASE 3 — Canopy (~4.0–7.2s) — easeOutCubic avoids elastic bounce at the end
+    // PHASE 3 — Canopy (~4.0–7.2s)
     window.setTimeout(() => {
       canopy.visible = true
       leaves.forEach((leaf, i) => {
@@ -363,22 +401,10 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
       })
     }, 4000)
 
-    // PHASE 4 — Glow + static fireflies, then freeze all per-frame motion
+    // PHASE 4 — Settle + hard freeze (no leftover tweens / lights / shadows)
     window.setTimeout(() => {
-      if (animate) {
-        animate({
-          targets: glow,
-          intensity: 1.05,
-          duration: 1400,
-          easing: 'easeInOutQuad',
-        })
-      } else {
-        glow.intensity = 1.05
-      }
-
-      // Static sparks only — no orbit (orbit looked like the crown was jittering)
       spawnStaticFireflies(group, fireflies, trunkHeight)
-      frozen = true
+      hardFreeze()
 
       if (typeof options.onMature === 'function') {
         options.onMature()
@@ -439,6 +465,24 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
 
   const animate = typeof window !== 'undefined' && window.anime ? window.anime : null
 
+  const hardFreezeUnder = () => {
+    if (animate) {
+      animate.remove(stem.scale)
+      animate.remove(blob.scale)
+    }
+    stem.scale.set(1, 1, 1)
+    blob.scale.setScalar(1)
+    group.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.castShadow = false
+        obj.receiveShadow = false
+      }
+      obj.updateMatrix()
+      obj.matrixAutoUpdate = false
+    })
+    group.updateMatrixWorld(true)
+  }
+
   const grow = () => {
     if (animate) {
       animate({
@@ -455,10 +499,12 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
         duration: 1500,
         delay: 400,
         easing: 'easeOutCubic',
+        complete: hardFreezeUnder,
       })
     } else {
       stem.scale.y = 1
       blob.scale.setScalar(1)
+      hardFreezeUnder()
     }
   }
 
@@ -488,15 +534,11 @@ function spawnStaticFireflies(treeGroup, outList, trunkHeight) {
 }
 
 /**
- * Soft one-shot brighten when the forest "awakens".
- * Not a looping pulse — looping emissive flicker felt like jitter while idle.
+ * Soft one-shot brighten when the forest awakens.
+ * Direct material write only — no anime loop (that read as shimmer/shake when idle).
  */
 export function pulseForestCanopy() {
-  if (typeof window.anime !== 'function') return
-  window.anime({
-    targets: LEAF_MATERIALS,
-    emissiveIntensity: 1.35,
-    duration: 1400,
-    easing: 'easeOutQuad',
-  })
+  for (let i = 0; i < LEAF_MATERIALS.length; i++) {
+    LEAF_MATERIALS[i].emissiveIntensity = 1.2
+  }
 }

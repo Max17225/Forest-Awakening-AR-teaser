@@ -142,6 +142,19 @@ export function initForestPipelineModule() {
     }
 
     playAwakeningSequence(treeMeta)
+
+    // After growth settles: stop shadow map rebuilds (shadow flicker = “trees shaking” when still)
+    window.setTimeout(() => {
+      try {
+        const { renderer } = XR8.Threejs.xrScene()
+        if (renderer?.shadowMap) {
+          renderer.shadowMap.needsUpdate = true
+          renderer.shadowMap.autoUpdate = false
+        }
+      } catch (_) {
+        /* XR scene may not be ready */
+      }
+    }, 10000)
   }
 
   const placeObjectTouchHandler = (e) => {
@@ -187,7 +200,7 @@ export function initForestPipelineModule() {
     },
 
     onUpdate: () => {
-      // Safe: mature trees' update() is a no-op (see tree.js anti-jitter notes)
+      // Mature trees are hard-frozen (matrixAutoUpdate false); skip work when nothing to animate
       for (let i = 0; i < trees.length; i++) {
         trees[i].update()
       }

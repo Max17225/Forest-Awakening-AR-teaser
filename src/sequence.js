@@ -5,7 +5,7 @@
  *   1) Dashboard with local starting temp (from app.js cache / Open-Meteo)
  *   2) While trees grow, numbers ease: temp ↓ a little, CO₂ kg ↑, air index ↓
  *   3) Lock "Impact verified"
- *   4) Hide dashboard → bottom brand lockup (Far Out logo, then Forest Awakening)
+ *   4) Keep dashboard visible + show bottom brand lockup (Far Out logo, then Forest Awakening)
  *
  * Place data: ONLY reads window.__FA_PLACE_CACHE__ (filled before XR8.run).
  * Does NOT call geolocation here — mid-AR prompts broke SLAM anchoring.
@@ -278,13 +278,8 @@ export async function playAwakeningSequence(treeMeta) {
     }
   }, 2200)
 
-  // —— Beat 3: bottom brand lockup; hide dashboard so nothing overlaps ——
+  // —— Beat 3: brand lockup; stats stay visible (dashboard not hidden) ——
   window.setTimeout(() => {
-    if (dashboard) {
-      dashboard.classList.remove('is-visible')
-      dashboard.classList.add('is-hidden')
-      dashboard.setAttribute('aria-hidden', 'true')
-    }
     if (reveal) {
       reveal.classList.add('is-visible')
       reveal.setAttribute('aria-hidden', 'false')
