@@ -11,11 +11,11 @@
       PAGE LAYERS (bottom → top)
       1. XR8 scripts → camera + SLAM (trees stay planted in the room)
       2. #camerafeed → live AR (camera feed + Three.js forest)
-      3. #ui-layer → HUD stickers (logo, stats, title, Coming Soon)
+      3. #ui-layer → HUD stickers (logo, stats, title)
          pointer-events:none so taps hit the AR canvas underneath
 
       Flow: one tap → dense forest grows (~8–9s) → live-ish stats
-      tick → Forest Awakening by Far Out → Coming Soon
+      tick → Far Out logo + Forest Awakening (bottom brand lockup)
 
       GPS / weather are fetched on the loading screen (app.js), not
       mid-AR, so the location prompt cannot break world tracking.
@@ -67,18 +67,9 @@
     <!--
       HUD OVERLAY (pointer-events: none so taps fall through to AR)
       Visual story after one tap:
-        impact dashboard → Forest Awakening by Far Out → Coming Soon
+        impact dashboard (top) → Far Out logo + Forest Awakening (bottom)
     -->
     <div id="ui-layer" aria-live="polite">
-      <!-- Always-on brand chip: small + faint, top-right -->
-      <img
-        id="brand-logo"
-        class="brand-logo"
-        src="/assets/logo.png"
-        alt="Far Out"
-        onerror="this.onerror=null;this.src='/assets/logo.svg'"
-      />
-
       <p class="instruction" id="instruction">Tap once to awaken the forest</p>
 
       <!--
@@ -109,19 +100,15 @@
         </div>
       </div>
 
-      <!-- Title beat: Forest Awakening + By + Far Out logo -->
+      <!-- End brand lockup: Far Out logo first, then Forest Awakening (bottom, no overlap with dashboard) -->
       <div class="reveal" id="reveal" aria-hidden="true">
+        <img
+          class="reveal-logo"
+          src="/assets/logo.png"
+          alt="Far Out"
+          onerror="this.onerror=null;this.src='/assets/logo.svg'"
+        />
         <h1 class="reveal-title">Forest<br />Awakening</h1>
-        <div class="reveal-by">
-          <span class="reveal-by-label">By</span>
-          <img
-            class="reveal-logo"
-            src="/assets/logo.png"
-            alt="Far Out"
-            onerror="this.onerror=null;this.src='/assets/logo.svg'"
-          />
-        </div>
-        <p class="coming-soon" id="coming-soon">Coming Soon…</p>
       </div>
 
       <p class="privacy" id="privacy">

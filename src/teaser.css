@@ -63,22 +63,6 @@ body {
   align-items: center;
 }
 
-/*
-  Far Out mark — always visible, quiet branding:
-  top-right, small, slightly see-through so it doesn't fight the forest.
-*/
-.brand-logo {
-  position: absolute;
-  top: max(14px, env(safe-area-inset-top));
-  right: max(14px, env(safe-area-inset-right));
-  height: 28px;
-  width: auto;
-  max-width: 120px;
-  object-fit: contain;
-  opacity: 0.55;
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.6));
-}
-
 /* First-screen hint — disappears when the grove is planted */
 .instruction {
   position: absolute;
@@ -113,7 +97,7 @@ body {
 */
 .dashboard {
   position: absolute;
-  top: max(12%, calc(env(safe-area-inset-top) + 56px));
+  top: max(10%, calc(env(safe-area-inset-top) + 24px));
   left: 5%;
   right: 5%;
   max-width: 420px;
@@ -129,11 +113,19 @@ body {
   transform: translateY(-18px);
   transition: opacity 0.55s ease, transform 0.55s ease;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  z-index: 2;
 }
 
 .dashboard.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Fade dashboard out when the bottom brand lockup appears — no overlap */
+.dashboard.is-hidden {
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
 }
 
 .status-text {
@@ -194,100 +186,53 @@ body {
 }
 
 /*
-  End title card — centered over the living forest.
-  "Coming Soon" fades in after the by-line logo.
+  End brand lockup — lower third so it never fights the top dashboard.
+  Order: Far Out logo → Forest Awakening (~20% smaller than prior title card).
 */
 .reveal {
   position: absolute;
-  top: 48%;
   left: 50%;
-  width: min(92vw, 360px);
-  transform: translate(-50%, -40%) scale(0.92);
+  bottom: max(72px, calc(env(safe-area-inset-bottom) + 56px));
+  top: auto;
+  width: min(88vw, 288px);
+  transform: translate(-50%, 12px) scale(0.96);
   text-align: center;
   opacity: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   transition: opacity 1s ease, transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal.is-visible {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, 0) scale(1);
+}
+
+.reveal-logo {
+  /* A bit larger than before, still under the Forest Awakening title weight */
+  height: clamp(34px, 9vw, 40px);
+  width: auto;
+  max-width: 168px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(204, 255, 0, 0.35));
 }
 
 .reveal-title {
   margin: 0;
   font-family: var(--display);
-  font-size: clamp(26px, 8vw, 40px);
+  /* was clamp(26px, 8vw, 40px) → ~20% smaller */
+  font-size: clamp(21px, 6.4vw, 32px);
   font-weight: 700;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   line-height: 1.15;
   text-transform: uppercase;
   color: #fff;
   text-shadow:
-    0 0 20px rgba(0, 255, 170, 0.75),
-    0 0 40px rgba(0, 255, 170, 0.35);
-}
-
-.reveal-by {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.reveal-by-label {
-  font-size: 11px;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  color: var(--teal);
-}
-
-.reveal-logo {
-  height: 36px;
-  width: auto;
-  max-width: 180px;
-  object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(204, 255, 0, 0.35));
-}
-
-.coming-soon {
-  margin: 28px 0 0;
-  padding: 12px 22px;
-  display: inline-block;
-  font-size: clamp(14px, 4.2vw, 18px);
-  font-weight: 700;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  color: #0a1208;
-  background: linear-gradient(180deg, #e8ff66 0%, #ccff00 100%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 4px;
-  box-shadow:
-    0 0 24px rgba(204, 255, 0, 0.55),
-    0 8px 28px rgba(0, 0, 0, 0.45);
-  opacity: 0;
-  transform: translateY(10px) scale(0.96);
-  transition: opacity 0.85s ease, transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.coming-soon.is-visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  animation: comingSoonPulse 2.4s ease-in-out infinite;
-}
-
-@keyframes comingSoonPulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 20px rgba(204, 255, 0, 0.45),
-      0 8px 28px rgba(0, 0, 0, 0.45);
-  }
-  50% {
-    box-shadow:
-      0 0 36px rgba(204, 255, 0, 0.85),
-      0 8px 28px rgba(0, 0, 0, 0.45);
-  }
+    0 0 16px rgba(0, 255, 170, 0.7),
+    0 0 32px rgba(0, 255, 170, 0.3);
 }
 
 .privacy {
