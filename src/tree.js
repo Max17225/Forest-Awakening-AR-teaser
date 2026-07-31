@@ -8,7 +8,8 @@
  *   fan    — umbrella / wide crown
  *   under  — short bushes (createUndergrowth) filling the floor
  *
- * Height: moderately tall (tilt up a bit to see crowns) — not skyscraper-tall.
+ * Height: real-tree scale outdoors (~4-6m for a full-size canopy tree after
+ * TREE_VISUAL_SCALE) — tilt up a bit to see crowns, not skyscraper-tall.
  *
  * Anti-jitter (phone held still after growth):
  *   - group.position is set ONCE at plant time and never written again
@@ -17,6 +18,13 @@
  *   - trunk uses easeOutCubic (no elastic overshoot wobble)
  *   - canopy pulse is a ONE-SHOT brighten, not an infinite flicker loop
  *   - update() is a no-op after mature so onUpdate cannot nudge meshes
+ *   - hardFreeze() keeps the TRUNK's castShadow on (that's the visible
+ *     grounded-shadow cue) and only drops shadows from leaf blobs
+ *
+ * Perf (many trees planted over multiple taps):
+ *   - no per-tree PointLight — every light in the scene gets looped over
+ *     in every material's shader each frame, so this was pure overhead
+ *     for a light that was always at intensity 0 anyway
  *
  * World placement / SLAM floor raycast lives in scene.js.
  */
@@ -72,6 +80,18 @@ const saplingLeafMat = new THREE.MeshStandardMaterial({
 const fireflyMat = new THREE.MeshBasicMaterial({ color: 0xffea00 })
 
 const LEAF_MATERIALS = [leafMatLime, leafMatTeal, leafMatGold]
+
+/**
+ * Uniform bump applied on top of each tree's sizeScale so groves read as
+ * real trees outdoors (against real buildings/people) instead of looking
+ * like tabletop miniatures. Applied at the group level, so every child
+ * (trunk, canopy, leaves, fireflies) scales together — proportions from
+ * each blueprint below are untouched. Kept separate from `sizeScale` itself
+ * so the HUD impact math (which reads sizeScale, not the rendered size)
+ * doesn't get thrown off by this.
+ */
+const TREE_VISUAL_SCALE = 1.7
+const UNDERGROWTH_VISUAL_SCALE = 1.15
 
 export const TREE_TYPES = ['canopy', 'spire', 'willow', 'fan']
 
@@ -232,7 +252,7 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
   const group = new THREE.Group()
   group.position.set(x, y, z)
   group.rotation.y = Math.random() * Math.PI * 2
-  group.scale.setScalar(sizeScale)
+  group.scale.setScalar(sizeScale * TREE_VISUAL_SCALE)
   group.userData.treeType = treeType
   scene.add(group)
 
@@ -276,9 +296,10 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
   group.add(canopy)
   const leaves = blueprint.buildCanopy(canopy, trunkHeight, leafMat)
 
-  const glow = new THREE.PointLight(blueprint.glowColor, 0, 4.5)
-  glow.position.set(0, trunkHeight * 0.75, 0)
-  group.add(glow)
+  // No per-tree PointLight — it used to sit at intensity 0 doing nothing
+  // visually, but every added light still gets looped over in the lighting
+  // shader for every material in the scene, so with dozens of trees planted
+  // it was pure per-frame overhead. Removed entirely for perf.
 
   const fireflies = []
   const animate = typeof window !== 'undefined' && window.anime ? window.anime : null
@@ -290,7 +311,6 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
       animate.remove(firstLeaves.scale)
       animate.remove(trunk.scale)
       animate.remove(trunk.position)
-      animate.remove(glow)
       leaves.forEach((leaf) => animate.remove(leaf.scale))
     }
 
@@ -304,16 +324,18 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
       const s = leaf.userData.targetScale ?? 1
       leaf.scale.setScalar(s)
     })
-    // Point lights + shadow casters shimmer when SLAM camera micro-moves — kill both
-    glow.intensity = 0
-    glow.visible = false
+
+    // Keep the trunk's shadow — that's the visible "tree is grounded" cue.
+    // Only drop shadows from the leaf blobs (cheaper, and losing leaf
+    // shadows is invisible next to the trunk's shadow blob).
+    trunk.receiveShadow = false
+    leaves.forEach((leaf) => {
+      leaf.castShadow = false
+      leaf.receiveShadow = false
+    })
 
     // Bake matrices BEFORE disabling autoUpdate (Three skips updateMatrix when autoUpdate is false)
     group.traverse((obj) => {
-      if (obj.isMesh) {
-        obj.castShadow = false
-        obj.receiveShadow = false
-      }
       obj.updateMatrix()
       obj.matrixAutoUpdate = false
     })
@@ -441,7 +463,7 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
   const group = new THREE.Group()
   group.position.set(x, y, z)
   group.rotation.y = Math.random() * Math.PI * 2
-  group.scale.setScalar(sizeScale)
+  group.scale.setScalar(sizeScale * UNDERGROWTH_VISUAL_SCALE)
   scene.add(group)
 
   const stemH = 0.32 + Math.random() * 0.22
@@ -472,11 +494,11 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
     }
     stem.scale.set(1, 1, 1)
     blob.scale.setScalar(1)
+    // Keep the stem's shadow; drop the blob's (cheaper, visually unnoticeable)
+    blob.castShadow = false
+    blob.receiveShadow = false
+    stem.receiveShadow = false
     group.traverse((obj) => {
-      if (obj.isMesh) {
-        obj.castShadow = false
-        obj.receiveShadow = false
-      }
       obj.updateMatrix()
       obj.matrixAutoUpdate = false
     })

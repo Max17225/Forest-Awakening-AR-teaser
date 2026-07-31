@@ -181,15 +181,13 @@ body {
 }
 
 /*
-  End brand lockup — raised ~15–20% from the very bottom so it sits
-  in the lower-middle band (stats stay at the top, no fade-out).
-  Order: Far Out logo → Forest Awakening.
+  End brand lockup — sits low, just above the privacy footer (stats stay
+  at the top, no fade-out). Order: Far Out logo → Forest Awakening.
 */
 .reveal {
   position: absolute;
   left: 50%;
-  /* Was ~56–72px from bottom; 28vh lifts the lockup ~15–20% of the screen */
-  bottom: max(26vh, calc(env(safe-area-inset-bottom) + 160px));
+  bottom: max(9vh, calc(env(safe-area-inset-bottom) + 84px));
   top: auto;
   width: min(88vw, 288px);
   transform: translate(-50%, 12px) scale(0.96);
