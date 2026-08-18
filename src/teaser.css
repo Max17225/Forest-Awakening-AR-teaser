@@ -11,13 +11,13 @@
 */
 
 :root {
-  --lime: #ccff00;
-  --teal: #00ffaa;
-  --warn: #ffdd00;
+  --lime: #c4ff00;
+  --teal: #c4ff00;
+  --warn: #c4ff00;
   --danger: #ff3366;
-  --panel: rgba(10, 15, 20, 0.78);
-  --font: 'Space Mono', ui-monospace, monospace;
-  --display: 'Syncopate', sans-serif;
+  --panel: rgba(8, 16, 8, 0.72);
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * {
@@ -78,11 +78,14 @@ body {
   line-height: 1.45;
   text-transform: uppercase;
   color: var(--lime);
-  background: rgba(204, 255, 0, 0.12);
-  border: 1px solid rgba(204, 255, 0, 0.4);
+  background: rgba(196, 255, 0, 0.14);
+  border: 1px solid rgba(196, 255, 0, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(196, 255, 0, 0.25) inset,
+    0 0 20px rgba(196, 255, 0, 0.2);
   transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
@@ -104,15 +107,18 @@ body {
   margin: 0 auto;
   padding: 18px 20px;
   background: var(--panel);
-  border: 1px solid rgba(0, 255, 170, 0.3);
-  border-radius: 12px;
+  border: 1px solid rgba(196, 255, 0, 0.45);
+  border-radius: 10px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: #fff;
+  color: var(--lime);
   opacity: 0;
   transform: translateY(-18px);
   transition: opacity 0.55s ease, transform 0.55s ease;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(196, 255, 0, 0.22) inset,
+    0 0 28px rgba(196, 255, 0, 0.24),
+    0 10px 24px rgba(0, 0, 0, 0.45);
   z-index: 2;
 }
 
@@ -132,15 +138,15 @@ body {
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--teal);
+  color: var(--lime);
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--teal);
-  box-shadow: 0 0 10px var(--teal);
+  background: var(--lime);
+  box-shadow: 0 0 12px var(--lime);
   flex-shrink: 0;
 }
 
@@ -162,7 +168,7 @@ body {
 
 .stat-label {
   font-size: 11px;
-  color: #aaa;
+  color: rgba(196, 255, 0, 0.72);
   letter-spacing: 1px;
 }
 
@@ -173,11 +179,11 @@ body {
 }
 
 .stat-value.warning {
-  color: var(--danger);
+  color: rgba(196, 255, 0, 0.8);
 }
 
 .stat-value.drop {
-  color: var(--teal);
+  color: var(--lime);
 }
 
 /*
@@ -186,48 +192,29 @@ body {
 */
 .reveal {
   position: absolute;
-  left: 50%;
-  bottom: max(9vh, calc(env(safe-area-inset-bottom) + 84px));
-  top: auto;
-  width: min(88vw, 288px);
-  transform: translate(-50%, 12px) scale(0.96);
-  text-align: center;
-  opacity: 0;
+  top: max(4%, calc(env(safe-area-inset-top) + 4%));
+  right: 4%;
+  left: auto;
+  bottom: auto;
+  width: auto;
+  transform: none;
+  text-align: right;
+  opacity: 1;
   z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  transition: opacity 1s ease, transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+  display: block;
 }
 
 .reveal.is-visible {
   opacity: 1;
-  transform: translate(-50%, 0) scale(1);
+  transform: none;
 }
 
 .reveal-logo {
-  /* A bit larger than before, still under the Forest Awakening title weight */
-  height: clamp(34px, 9vw, 40px);
+  height: clamp(28px, 7vw, 36px);
   width: auto;
-  max-width: 168px;
+  max-width: 152px;
   object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(204, 255, 0, 0.35));
-}
-
-.reveal-title {
-  margin: 0;
-  font-family: var(--display);
-  /* was clamp(26px, 8vw, 40px) → ~20% smaller */
-  font-size: clamp(21px, 6.4vw, 32px);
-  font-weight: 700;
-  letter-spacing: 3px;
-  line-height: 1.15;
-  text-transform: uppercase;
-  color: #fff;
-  text-shadow:
-    0 0 16px rgba(0, 255, 170, 0.7),
-    0 0 32px rgba(0, 255, 170, 0.3);
+  filter: drop-shadow(0 0 16px rgba(196, 255, 0, 0.42));
 }
 
 .privacy {
@@ -240,7 +227,7 @@ body {
   text-align: center;
   font-size: 9px;
   letter-spacing: 0.5px;
-  color: rgba(204, 255, 0, 0.45);
+  color: rgba(196, 255, 0, 0.55);
   line-height: 1.4;
 }
 

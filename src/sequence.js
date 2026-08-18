@@ -222,7 +222,6 @@ export async function playAwakeningSequence(treeMeta) {
   const tempVal = document.getElementById('temp-val')
   const co2Val = document.getElementById('co2-val')
   const aqiVal = document.getElementById('aqi-val')
-  const reveal = document.getElementById('reveal')
   const privacy = document.getElementById('privacy')
 
   if (privacy) privacy.classList.add('is-hidden')
@@ -244,11 +243,11 @@ export async function playAwakeningSequence(treeMeta) {
       statusMsg.textContent = impact.liveTemp
         ? 'Live local temp · forest working…'
         : 'Local estimate · forest working…'
-      statusMsg.style.color = '#ffdd00'
+      statusMsg.style.color = '#c4ff00'
     }
     if (statusDot) {
-      statusDot.style.background = '#ffdd00'
-      statusDot.style.boxShadow = '0 0 10px #ffdd00'
+      statusDot.style.background = '#c4ff00'
+      statusDot.style.boxShadow = '0 0 10px #c4ff00'
     }
 
     // Animate for ~6s so it tracks the slower grow window (dashboard ~2.2s → ~8.2s)
@@ -264,11 +263,11 @@ export async function playAwakeningSequence(treeMeta) {
       statusMsg.textContent = finalImpact.hasGps
         ? 'Impact verified · local zone'
         : 'Impact verified'
-      statusMsg.style.color = '#00ffaa'
+      statusMsg.style.color = '#c4ff00'
     }
     if (statusDot) {
-      statusDot.style.background = '#00ffaa'
-      statusDot.style.boxShadow = '0 0 10px #00ffaa'
+      statusDot.style.background = '#c4ff00'
+      statusDot.style.boxShadow = '0 0 10px #c4ff00'
     }
 
     if (tempVal) {
@@ -290,13 +289,6 @@ export async function playAwakeningSequence(treeMeta) {
     }
   }, 2200)
 
-  // —— Beat 3: brand lockup; stats stay visible (dashboard not hidden) ——
-  window.setTimeout(() => {
-    if (reveal) {
-      reveal.classList.add('is-visible')
-      reveal.setAttribute('aria-hidden', 'false')
-    }
-  }, 9500)
 }
 
 /**
