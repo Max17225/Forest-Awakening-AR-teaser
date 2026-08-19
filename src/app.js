@@ -112,6 +112,53 @@ const onXrLoaded = async () => {
   })
 }
 
+const isMobileDevice = () =>
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  )
+
+const setupDesktopSplash = () => {
+  const splashScreen = document.getElementById('splash-screen')
+  const startBtn = document.getElementById('start-ar-button')
+  const disclaimer = document.querySelector('.splash-disclaimer')
+  const title = document.querySelector('.splash-title')
+  const text = document.querySelector('.splash-text')
+  const qrContainer = document.getElementById('desktop-qr-container')
+  const qrImage = document.getElementById('desktop-qr-code')
+
+  if (splashScreen) {
+    splashScreen.classList.remove('hidden')
+    splashScreen.style.opacity = '1'
+    splashScreen.style.pointerEvents = 'auto'
+  }
+
+  if (startBtn) startBtn.style.display = 'none'
+  if (disclaimer) disclaimer.style.display = 'none'
+
+  if (title) title.textContent = 'Desktop Detected'
+  if (text) {
+    text.innerHTML =
+      'This WebAR experience requires a mobile device camera.<br/><br/>Please scan the QR code below to enter the forest.'
+  }
+
+  if (qrImage) {
+    qrImage.src =
+      `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=` +
+      encodeURIComponent(window.location.href)
+  }
+  if (qrContainer) qrContainer.classList.remove('hidden')
+}
+
+const dismissSplash = () => {
+  const splashScreen = document.getElementById('splash-screen')
+  if (!splashScreen) return
+  splashScreen.style.opacity = '0'
+  splashScreen.style.pointerEvents = 'none'
+  window.setTimeout(() => {
+    splashScreen.classList.add('hidden')
+  }, 400)
+}
+
 let experienceStarted = false
 
 const startExperience = () => {
@@ -120,7 +167,32 @@ const startExperience = () => {
   XRExtras.Loading.showLoading({ onxrloaded: onXrLoaded })
 }
 
-window.addEventListener('xrextrasloaded', startExperience)
-window.addEventListener('xrloaded', startExperience)
-window.addEventListener('load', startExperience)
-startExperience()
+const armStartButton = () => {
+  if (!isMobileDevice()) return
+  const startBtn = document.getElementById('start-ar-button')
+  if (!startBtn || startBtn.dataset.armed === 'true') return
+  if (!window.XRExtras || !window.XR8) return
+
+  startBtn.dataset.armed = 'true'
+  startBtn.disabled = false
+  startBtn.textContent = 'START AR'
+  startBtn.addEventListener('click', () => {
+    if (startBtn.disabled) return
+    startBtn.disabled = true
+    dismissSplash()
+    startExperience()
+  })
+}
+
+if (!isMobileDevice()) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupDesktopSplash)
+  } else {
+    setupDesktopSplash()
+  }
+} else {
+  window.addEventListener('xrextrasloaded', armStartButton)
+  window.addEventListener('xrloaded', armStartButton)
+  window.addEventListener('load', armStartButton)
+  armStartButton()
+}
