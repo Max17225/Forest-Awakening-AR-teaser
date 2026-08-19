@@ -64,6 +64,22 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/teaser.css" />
+    <style>
+      #app-logo {
+        z-index: 10001;
+      }
+
+      .xrextras-branding,
+      #xrextras-branding,
+      .xrextras-named-image-link,
+      [href*='8thwall.com'],
+      [href*='nianticspatial.com'] {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
   </head>
   <body>
     <!--
@@ -79,6 +95,13 @@
         impact dashboard (top) → Far Out logo + Forest Awakening (bottom)
     -->
     <div id="ui-layer" aria-live="polite">
+      <h1>Canopy Index</h1>
+      <p>
+        Tap to plant forests around you and watch your
+        <strong>Canopy Index</strong> rise. Each forest you spawn improves the
+        score, estimated from your real-world location. How green can you make
+        your surroundings?
+      </p>
       <p class="instruction" id="instruction">Tap to awaken the forest</p>
 
       <!--
