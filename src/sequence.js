@@ -222,9 +222,7 @@ export async function playAwakeningSequence(treeMeta) {
   const tempVal = document.getElementById('temp-val')
   const co2Val = document.getElementById('co2-val')
   const aqiVal = document.getElementById('aqi-val')
-  const privacy = document.getElementById('privacy')
 
-  if (privacy) privacy.classList.add('is-hidden')
   startStatusPulse()
 
   // Fetch GPS + Open-Meteo ASAP so the dashboard can open with real-ish numbers

@@ -20,8 +20,8 @@
       3. #ui-layer → HUD stickers (logo, stats, title)
          pointer-events:none so taps hit the AR canvas underneath
 
-      Flow: one tap → dense forest grows (~8–9s) → live-ish stats
-      tick → Far Out logo + Forest Awakening (bottom brand lockup)
+      Flow: splash → START AR → 8th Wall load → tap plants grove
+      (~8–9s) → live-ish stats. Far Out logo stays top-right.
 
       GPS / weather are fetched on the loading screen (app.js), not
       mid-AR, so the location prompt cannot break world tracking.
@@ -60,21 +60,84 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/teaser.css" />
-    <style>
-      #app-logo {
-        z-index: 10001;
-      }
-
-      .attribution {
-        display: none !important;
-      }
-    </style>
   </head>
   <body>
+    <img
+      id="app-logo"
+      src="/assets/logo.png"
+      alt="Far Out"
+      onerror="
+        this.onerror = null;
+        this.src = '/assets/logo.svg';
+      "
+    />
+
+    <div id="splash-screen">
+      <div class="splash-card">
+        <div class="splash-logo-container">
+          <span class="splash-by">By</span>
+          <img
+            class="splash-logo-img"
+            src="/assets/logo.png"
+            alt="Far Out"
+            onerror="
+              this.onerror = null;
+              this.src = '/assets/logo.svg';
+            "
+          />
+        </div>
+
+        <h1 class="splash-title">Canopy Index</h1>
+
+        <p class="splash-text">
+          Tap to plant forests around you and watch your
+          <strong>Canopy Index</strong> rise. Each forest you spawn improves the
+          score, estimated from your real-world location. How green can you make
+          your surroundings?
+        </p>
+
+        <div class="splash-disclaimer">
+          <strong>Development Preview</strong><br />
+          This experience is currently in early development and may contain
+          visual bugs.
+        </div>
+
+        <div id="desktop-qr-container" class="hidden">
+          <img
+            id="desktop-qr-code"
+            alt="QR Code"
+            style="
+              border-radius: 8px;
+              border: 2px solid #c4ff00;
+              padding: 8px;
+              background: #fff;
+              width: 140px;
+              height: 140px;
+            "
+          />
+          <p
+            style="
+              color: #c4ff00;
+              font-size: 14px;
+              font-weight: 800;
+              margin-top: 12px;
+              margin-bottom: 0;
+            "
+          >
+            Scan to open on mobile
+          </p>
+        </div>
+
+        <button id="start-ar-button" type="button" disabled>
+          LOADING AR...
+        </button>
+      </div>
+    </div>
+
     <!--
       AR VIEWPORT
       XR8 paints the real camera feed + Three.js trees into this canvas.
@@ -82,13 +145,12 @@
     -->
     <canvas id="camerafeed"></canvas>
 
+    <p class="instruction" id="instruction">Tap to awaken the forest</p>
+
     <!--
       HUD OVERLAY (pointer-events: none so taps fall through to AR)
-      Visual story after one tap:
-        impact dashboard (top) → Far Out logo + Forest Awakening (bottom)
     -->
     <div id="ui-layer" aria-live="polite">
-      <p class="instruction" id="instruction">Tap to awaken the forest</p>
 
       <!--
         Live-ish environmental HUD:
@@ -118,24 +180,6 @@
         </div>
       </div>
 
-      <div class="reveal" id="reveal" aria-hidden="false">
-        <img
-          class="reveal-logo"
-          src="/assets/logo.png"
-          alt="Far Out"
-          onerror="
-            this.onerror = null;
-            this.src = '/assets/logo.svg';
-          "
-        />
-      </div>
-
-      <p class="privacy" id="privacy">
-        Camera for AR. Location (if allowed) only fetches local temperature —
-        nothing is stored.
-      </p>
-
-      <p class="attribution">AR engine by Niantic Spatial / 8th Wall</p>
     </div>
 
     <script type="module" src="/src/app.js"></script>
