@@ -215,7 +215,9 @@ export function initForestPipelineModule() {
 
   const placeObjectTouchHandler = (e) => {
     // Single finger only — two-finger recenter was disabled (caused re-anchor jitter)
-    if (e.touches.length !== 1 || !surface) return
+    if (!window.__FA_SPLASH_DISMISSED__ || e.touches.length !== 1 || !surface) {
+      return
+    }
 
     const { scene, camera } = XR8.Threejs.xrScene()
 

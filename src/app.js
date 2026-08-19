@@ -3,12 +3,13 @@
  *
  * Order of operations (matters for anchoring):
  *   1. Wait for XR8 + XRExtras
- *   2. Show loading UI
+ *   2. 8th Wall loading UI (Far Out logo stays top-right)
  *   3. Prefetch GPS + Open-Meteo temp INTO window.__FA_PLACE_CACHE__
  *      (MUST happen before the camera — a mid-AR location prompt pauses
  *       WebGL and can make planted trees drift / jitter)
  *   4. Register camera pipeline (feed + Three.js + SLAM)
  *   5. XR8.run() → camera + world tracking
+ *   6. When tracking is live, show splash → START AR → HUD
  *
  * After this file, scene.js owns tap → forest, sequence.js owns the HUD.
  */
@@ -25,6 +26,9 @@ if (THREE.ColorManagement) {
 
 /** Read by sequence.js — never refetch GPS during AR */
 window.__FA_PLACE_CACHE__ = null
+
+/** Tap-to-plant stays off until START AR dismisses the splash */
+window.__FA_SPLASH_DISMISSED__ = false
 
 /** API: Open-Meteo current temperature (no API key). Docs: https://open-meteo.com/ */
 function fetchLiveTemperature(lat, lon) {
@@ -95,6 +99,7 @@ const onXrLoaded = async () => {
     XRExtras.FullWindowCanvas.pipelineModule(),
     XRExtras.Loading.pipelineModule(),
     XRExtras.RuntimeError.pipelineModule(),
+    splashGatePipelineModule(),
     // Our dense forest + HUD hand-off
     initForestPipelineModule(),
   ])
@@ -149,14 +154,48 @@ const setupDesktopSplash = () => {
   if (qrContainer) qrContainer.classList.remove('hidden')
 }
 
+const splashGatePipelineModule = () => ({
+  name: 'canopy-splash-gate',
+  onStart: () => {
+    revealSplashAfterLoad()
+  },
+})
+
+const revealSplashAfterLoad = () => {
+  const splashScreen = document.getElementById('splash-screen')
+  const startBtn = document.getElementById('start-ar-button')
+  if (!splashScreen || !startBtn) return
+
+  splashScreen.classList.remove('hidden')
+  splashScreen.style.opacity = '1'
+  splashScreen.style.pointerEvents = 'auto'
+
+  startBtn.disabled = false
+  startBtn.textContent = 'START AR'
+
+  if (startBtn.dataset.armed === 'true') return
+  startBtn.dataset.armed = 'true'
+  startBtn.addEventListener('click', () => {
+    if (startBtn.disabled) return
+    startBtn.disabled = true
+    window.__FA_SPLASH_DISMISSED__ = true
+    dismissSplash()
+  })
+}
+
 const dismissSplash = () => {
   const splashScreen = document.getElementById('splash-screen')
-  if (!splashScreen) return
-  splashScreen.style.opacity = '0'
-  splashScreen.style.pointerEvents = 'none'
-  window.setTimeout(() => {
-    splashScreen.classList.add('hidden')
-  }, 400)
+  const instruction = document.getElementById('instruction')
+  if (splashScreen) {
+    splashScreen.style.opacity = '0'
+    splashScreen.style.pointerEvents = 'none'
+    window.setTimeout(() => {
+      splashScreen.classList.add('hidden')
+      if (instruction) instruction.classList.remove('hidden')
+    }, 400)
+  } else if (instruction) {
+    instruction.classList.remove('hidden')
+  }
 }
 
 let experienceStarted = false
@@ -167,23 +206,6 @@ const startExperience = () => {
   XRExtras.Loading.showLoading({ onxrloaded: onXrLoaded })
 }
 
-const armStartButton = () => {
-  if (!isMobileDevice()) return
-  const startBtn = document.getElementById('start-ar-button')
-  if (!startBtn || startBtn.dataset.armed === 'true') return
-  if (!window.XRExtras || !window.XR8) return
-
-  startBtn.dataset.armed = 'true'
-  startBtn.disabled = false
-  startBtn.textContent = 'START AR'
-  startBtn.addEventListener('click', () => {
-    if (startBtn.disabled) return
-    startBtn.disabled = true
-    dismissSplash()
-    startExperience()
-  })
-}
-
 if (!isMobileDevice()) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupDesktopSplash)
@@ -191,8 +213,8 @@ if (!isMobileDevice()) {
     setupDesktopSplash()
   }
 } else {
-  window.addEventListener('xrextrasloaded', armStartButton)
-  window.addEventListener('xrloaded', armStartButton)
-  window.addEventListener('load', armStartButton)
-  armStartButton()
+  window.addEventListener('xrextrasloaded', startExperience)
+  window.addEventListener('xrloaded', startExperience)
+  window.addEventListener('load', startExperience)
+  startExperience()
 }

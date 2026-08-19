@@ -67,7 +67,7 @@ body {
   display: none !important;
 }
 
-/* Far Out mark — body-level so it sits above 8th Wall's default loader */
+/* Far Out mark — above 8th Wall loader (z 800), below splash (z 10000) */
 #app-logo {
   position: fixed;
   top: 4%;
@@ -76,7 +76,7 @@ body {
   height: auto;
   opacity: 0.9;
   pointer-events: none;
-  z-index: 10001;
+  z-index: 9999;
   filter: drop-shadow(0 0 8px rgba(196, 255, 0, 0.6));
 }
 
@@ -219,7 +219,7 @@ body {
   top: 12%;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20;
+  z-index: 9998;
   pointer-events: none;
   margin: 0;
   padding: 12px 22px;
