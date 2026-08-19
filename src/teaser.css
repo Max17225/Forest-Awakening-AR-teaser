@@ -63,190 +63,35 @@ body {
   align-items: center;
 }
 
-.hidden {
-  display: none !important;
-}
-
-/* Far Out mark — sits above 8th Wall's default loader */
-#app-logo {
-  position: fixed;
-  top: 4%;
-  right: 4%;
-  width: 90px;
-  height: auto;
-  opacity: 0.9;
-  pointer-events: none;
-  z-index: 10001;
-  filter: drop-shadow(0 0 8px rgba(196, 255, 0, 0.6));
-}
-
-.reveal-logo {
-  height: auto;
-  max-width: 152px;
-  object-fit: contain;
-}
-
-/* Hide 8th Wall / Niantic branding overlays */
-.poweredby-img,
-.xr8-powered-by,
-[class*='poweredby'],
-[class*='powered-by'] {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-/* --- SPLASH SCREEN (matches Forest Reawakening lime theme) --- */
-#splash-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-  transition: opacity 0.4s ease;
-  padding: 20px;
-  box-sizing: border-box;
-  pointer-events: auto;
-}
-
-.splash-card {
-  background: rgba(17, 17, 17, 0.95);
-  border: 1px solid #c4ff00;
-  border-radius: 24px;
-  padding: 35px 25px;
-  width: 100%;
-  max-width: 380px;
-  max-height: 90vh;
-  overflow-y: auto;
-  text-align: center;
-  box-shadow:
-    0 0 30px rgba(196, 255, 0, 0.15),
-    inset 0 0 20px rgba(196, 255, 0, 0.1);
-  color: #ffffff;
-  box-sizing: border-box;
-}
-
-.splash-logo-container {
-  margin-bottom: 20px;
-}
-
-.splash-by {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: #a0a0a0;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.splash-logo-img {
-  height: 45px;
-  width: auto;
-  filter: drop-shadow(0 0 10px rgba(196, 255, 0, 0.8));
-}
-
-.splash-title {
-  font-size: 26px;
-  font-weight: 900;
-  margin: 0 0 20px 0;
-  letter-spacing: 0.5px;
-  background: linear-gradient(100deg, #8ff3c0 0%, #c4ff00 65%, #e9ff7a 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.splash-text {
-  font-size: 15px;
-  line-height: 1.5;
-  color: #d0d5d8;
-  margin: 0 0 24px 0;
-}
-
-.splash-text strong {
-  color: #c4ff00;
-}
-
-.splash-disclaimer {
-  font-size: 12px;
-  line-height: 1.4;
-  color: #a0a0a0;
-  background: rgba(196, 255, 0, 0.05);
-  border: 1px solid rgba(196, 255, 0, 0.2);
-  padding: 12px;
-  border-radius: 12px;
-  margin: 0 0 24px 0;
-}
-
-#desktop-qr-container {
-  margin-bottom: 10px;
-}
-
-#start-ar-button {
-  background-color: #c4ff00;
-  color: #000;
-  border: none;
-  border-radius: 30px;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  width: 100%;
-  box-sizing: border-box;
-  box-shadow: 0 0 15px rgba(196, 255, 0, 0.4);
-  transition: all 0.2s;
-  cursor: pointer;
-  pointer-events: auto;
-  font-family: inherit;
-}
-
-#start-ar-button:disabled {
-  background-color: #1a2a1a;
-  color: #557755;
-  box-shadow: none;
-  border: 1px solid #334433;
-  cursor: not-allowed;
-}
-
-#start-ar-button:active:not(:disabled) {
-  transform: scale(0.96);
-  box-shadow: 0 0 25px rgba(196, 255, 0, 0.8);
-}
-
-/* First-screen hint — same treatment as Forest Reawakening tutorial */
+/* First-screen hint — disappears when the grove is planted */
 .instruction {
-  position: fixed;
-  top: 12%;
+  position: absolute;
+  bottom: 24%;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9998;
-  pointer-events: none;
   margin: 0;
-  padding: 12px 22px;
-  color: #c4ff00;
-  font-size: 16px;
-  font-weight: 800;
+  padding: 12px 18px;
+  max-width: 16rem;
   text-align: center;
-  letter-spacing: normal;
-  text-transform: none;
-  line-height: 1.3;
-  background: rgba(17, 17, 17, 0.75);
-  border: 1px solid #c4ff00;
-  border-radius: 20px;
-  box-shadow: 0 0 15px rgba(196, 255, 0, 0.3);
-  white-space: nowrap;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  line-height: 1.45;
+  text-transform: uppercase;
+  color: var(--lime);
+  background: rgba(196, 255, 0, 0.14);
+  border: 1px solid rgba(196, 255, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(196, 255, 0, 0.25) inset,
+    0 0 20px rgba(196, 255, 0, 0.2);
   transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
 .instruction.is-hidden {
   opacity: 0;
-  transform: translateX(-50%) translateY(-12px);
+  transform: translateX(-50%) translateY(12px);
 }
 
 /*
@@ -341,3 +186,64 @@ body {
   color: var(--lime);
 }
 
+/*
+  End brand lockup — sits low, just above the privacy footer (stats stay
+  at the top, no fade-out). Order: Far Out logo → Forest Awakening.
+*/
+.reveal {
+  position: absolute;
+  top: max(4%, calc(env(safe-area-inset-top) + 4%));
+  right: 4%;
+  left: auto;
+  bottom: auto;
+  width: auto;
+  transform: none;
+  text-align: right;
+  opacity: 1;
+  z-index: 3;
+  display: block;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.reveal-logo {
+  height: clamp(28px, 7vw, 36px);
+  width: auto;
+  max-width: 152px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(196, 255, 0, 0.42));
+}
+
+.privacy {
+  position: absolute;
+  bottom: max(48px, calc(env(safe-area-inset-bottom) + 36px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90vw, 320px);
+  margin: 0;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: rgba(196, 255, 0, 0.55);
+  line-height: 1.4;
+}
+
+.privacy.is-hidden {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.attribution {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
