@@ -80,15 +80,6 @@ body {
   filter: drop-shadow(0 0 8px rgba(196, 255, 0, 0.6));
 }
 
-/* Hide 8th Wall / Niantic branding overlays */
-.poweredby-img,
-.xr8-powered-by,
-[class*='poweredby'],
-[class*='powered-by'] {
-  display: none !important;
-  visibility: hidden !important;
-}
-
 /* --- SPLASH SCREEN (matches Forest Reawakening lime theme) --- */
 #splash-screen {
   position: fixed;
