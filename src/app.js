@@ -70,6 +70,28 @@ function fetchLiveAqi(lat, lon) {
     .catch(() => null)
 }
 
+/** Reverse-geocode for a readable area label (no API key). */
+function fetchPlaceLabel(lat, lon) {
+  const url =
+    `https://api.bigdatacloud.net/data/reverse-geocode-client` +
+    `?latitude=${encodeURIComponent(lat)}` +
+    `&longitude=${encodeURIComponent(lon)}` +
+    `&localityLanguage=en`
+  return fetch(url)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (!data) return null
+      const city =
+        data.city || data.locality || data.principalSubdivision || null
+      const country = data.countryName || null
+      if (city && country) return `${city}, ${country}`
+      if (city) return city
+      if (country) return country
+      return null
+    })
+    .catch(() => null)
+}
+
 function getGpsCoords() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
@@ -91,14 +113,19 @@ function getGpsCoords() {
 async function prefetchPlaceContext() {
   const coords = await getGpsCoords()
   if (coords) {
-    const [liveTemp, liveAqi] = await Promise.all([
+    const [liveTemp, liveAqi, placeLabel] = await Promise.all([
       fetchLiveTemperature(coords.lat, coords.lon),
       fetchLiveAqi(coords.lat, coords.lon),
+      fetchPlaceLabel(coords.lat, coords.lon),
     ])
     window.__FA_PLACE_CACHE__ = {
       coords,
       liveTemp,
       liveAqi,
+      placeLabel:
+        placeLabel ||
+        `${coords.lat.toFixed(2)}°, ${coords.lon.toFixed(2)}°`,
+      aqiSource: 'Open-Meteo',
       fetchedAt: Date.now(),
     }
   } else {
@@ -106,6 +133,8 @@ async function prefetchPlaceContext() {
       coords: null,
       liveTemp: null,
       liveAqi: null,
+      placeLabel: null,
+      aqiSource: null,
       fetchedAt: Date.now(),
     }
   }

@@ -112,6 +112,8 @@ async function resolvePlaceContext() {
     liveAqi,
     baselineTemp,
     airStart,
+    placeLabel: cache.placeLabel || null,
+    aqiSource: cache.aqiSource || (liveAqi ? 'Open-Meteo' : null),
   }
 }
 
@@ -159,7 +161,30 @@ export function computeImpactFromTrees(treeMeta, place) {
     liveTemp: place.liveTemp,
     liveAqi: place.liveAqi,
     hasGps: place.hasGps,
+    placeLabel: place.placeLabel,
+    aqiSource: place.aqiSource,
   }
+}
+
+function updateAqiSublabel(impact) {
+  const el = document.getElementById('aqi-sublabel')
+  if (!el) return
+
+  if (!impact.hasGps) {
+    el.textContent = 'Turn on location to read your area’s AQI'
+    el.classList.add('is-warn')
+    return
+  }
+
+  const area = impact.placeLabel || 'Your area'
+  if (impact.liveAqi && impact.aqiSource) {
+    el.textContent = `${area} · via ${impact.aqiSource}`
+    el.classList.remove('is-warn')
+    return
+  }
+
+  el.textContent = `${area} · location on, AQI unavailable`
+  el.classList.remove('is-warn')
 }
 
 function startStatusPulse() {
@@ -266,6 +291,7 @@ export async function playAwakeningSequence(treeMeta) {
       statusDot.style.background = '#c4ff00'
       statusDot.style.boxShadow = '0 0 10px #c4ff00'
     }
+    updateAqiSublabel(impact)
 
     await animateLiveStats(impact, 6000, { tempVal, co2Val, aqiVal })
 
@@ -279,6 +305,7 @@ export async function playAwakeningSequence(treeMeta) {
       statusDot.style.background = '#c4ff00'
       statusDot.style.boxShadow = '0 0 10px #c4ff00'
     }
+    updateAqiSublabel(finalImpact)
 
     if (tempVal) {
       tempVal.innerHTML =
@@ -337,5 +364,6 @@ export async function refreshImpactDisplay(allTreeMeta) {
     aqiVal.classList.add('drop')
   }
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
+  updateAqiSublabel(impact)
   impactRevealDone = true
 }

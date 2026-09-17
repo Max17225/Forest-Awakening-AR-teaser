@@ -165,8 +165,8 @@
             <li>Tap again to plant more clusters</li>
           </ol>
           <p class="howto-note">
-            Starting temp and AQI use live local data when available. CO₂ filtered
-            and air improvements are estimates from the trees you plant.
+            Turn on location so we can read your area’s live AQI (via Open-Meteo).
+            CO₂ filtered is an estimate from the trees you plant.
           </p>
           <button type="button" id="howto-next" class="howto-btn">Next</button>
         </div>
@@ -277,7 +277,9 @@
         <div class="stat-row">
           <div class="stat-label-block">
             <span class="stat-label">AIR AQI</span>
-            <span class="stat-sublabel">your location currently</span>
+            <span class="stat-sublabel" id="aqi-sublabel"
+              >Turn on location to read your area’s AQI</span
+            >
           </div>
           <span class="stat-value warning" id="aqi-val">—</span>
         </div>
