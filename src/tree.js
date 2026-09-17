@@ -1,12 +1,12 @@
 /**
  * tree.js — Procedural forest meshes (grow once, then FREEZE)
  *
- * Silhouettes mixed in the grove:
- *   canopy — lime cloud blobs
- *   spire  — layered cones (pine)
- *   willow — high trunk + drooping foliage
- *   fan    — umbrella / wide crown
- *   under  — short bushes (createUndergrowth) filling the floor
+ * Malaysia species silhouettes (must read apart at thumbnail size):
+ *   spire  — Casuarina / Rhu: tall needle cones, deep blue-green
+ *   fan    — Angsana: wide flat umbrella crown, mid forest green
+ *   canopy — Kelat jambu: tall dense oval crown, bright emerald
+ *   willow — Penaga lilin: columnar upright crown, dark glossy green
+ *   under  — hedge shrubs: low olive mound (createUndergrowth)
  *
  * Height: real-tree scale outdoors (~4-6m for a full-size canopy tree after
  * TREE_VISUAL_SCALE) — tilt up a bit to see crowns, not skyscraper-tall.
@@ -43,43 +43,135 @@ const trunkMatDark = new THREE.MeshStandardMaterial({
   metalness: 0.04,
 })
 
-const leafMatLime = new THREE.MeshStandardMaterial({
-  color: 0xccff00,
-  emissive: 0x445500,
-  emissiveIntensity: 0.55,
-  roughness: 0.4,
+/** Rhu — deep blue-green needles */
+const leafMatRhu = new THREE.MeshStandardMaterial({
+  color: 0x1f6b5a,
+  emissive: 0x0a3328,
+  emissiveIntensity: 0.45,
+  roughness: 0.55,
+  transparent: true,
+  opacity: 0.94,
+})
+
+/** Angsana — mid forest green, broad shade */
+const leafMatAngsana = new THREE.MeshStandardMaterial({
+  color: 0x3d9e4a,
+  emissive: 0x145022,
+  emissiveIntensity: 0.42,
+  roughness: 0.5,
   transparent: true,
   opacity: 0.92,
 })
 
-const leafMatTeal = new THREE.MeshStandardMaterial({
-  color: 0x66ffaa,
-  emissive: 0x114433,
+/** Kelat jambu — bright emerald canopy */
+const leafMatKelat = new THREE.MeshStandardMaterial({
+  color: 0x5fd65a,
+  emissive: 0x1a5520,
   emissiveIntensity: 0.5,
-  roughness: 0.45,
-  transparent: true,
-  opacity: 0.9,
-})
-
-const leafMatGold = new THREE.MeshStandardMaterial({
-  color: 0xd4ff4a,
-  emissive: 0x556600,
-  emissiveIntensity: 0.48,
   roughness: 0.42,
   transparent: true,
-  opacity: 0.9,
+  opacity: 0.92,
+})
+
+/** Penaga lilin — dark glossy columnar green */
+const leafMatPenaga = new THREE.MeshStandardMaterial({
+  color: 0x145c38,
+  emissive: 0x083020,
+  emissiveIntensity: 0.4,
+  roughness: 0.35,
+  transparent: true,
+  opacity: 0.93,
+})
+
+/** Undergrowth / hedges — muted olive */
+const leafMatShrub = new THREE.MeshStandardMaterial({
+  color: 0x6b8f3a,
+  emissive: 0x2a3a12,
+  emissiveIntensity: 0.35,
+  roughness: 0.65,
+  transparent: true,
+  opacity: 0.95,
 })
 
 const saplingLeafMat = new THREE.MeshStandardMaterial({
-  color: 0xdfff66,
-  emissive: 0x334400,
-  emissiveIntensity: 0.4,
+  color: 0x7dff66,
+  emissive: 0x224411,
+  emissiveIntensity: 0.35,
   roughness: 0.5,
 })
 
 const fireflyMat = new THREE.MeshBasicMaterial({ color: 0xffea00 })
 
-const LEAF_MATERIALS = [leafMatLime, leafMatTeal, leafMatGold]
+const LEAF_MATERIALS = [
+  leafMatRhu,
+  leafMatAngsana,
+  leafMatKelat,
+  leafMatPenaga,
+  leafMatShrub,
+]
+
+/** Scientific names + trait estimates for the species compare panel */
+export const SPECIES_INFO = {
+  spire: {
+    id: 'spire',
+    scientific: 'Casuarina equisetifolia',
+    traits: {
+      leafSurface: 70,
+      waxySurfaces: 55,
+      hairyTextures: 40,
+      leafDensity: 88,
+    },
+  },
+  fan: {
+    id: 'fan',
+    scientific: 'Pterocarpus indicus',
+    traits: {
+      leafSurface: 92,
+      waxySurfaces: 72,
+      hairyTextures: 58,
+      leafDensity: 76,
+    },
+  },
+  canopy: {
+    id: 'canopy',
+    scientific: 'Syzygium grande',
+    traits: {
+      leafSurface: 86,
+      waxySurfaces: 82,
+      hairyTextures: 52,
+      leafDensity: 84,
+    },
+  },
+  willow: {
+    id: 'willow',
+    scientific: 'Mesua ferrea',
+    traits: {
+      leafSurface: 78,
+      waxySurfaces: 68,
+      hairyTextures: 48,
+      leafDensity: 80,
+    },
+  },
+  under: {
+    id: 'under',
+    scientific: 'Acalypha siamensis',
+    traits: {
+      leafSurface: 48,
+      waxySurfaces: 60,
+      hairyTextures: 62,
+      leafDensity: 70,
+    },
+  },
+}
+
+export const SPECIES_ORDER = ['spire', 'fan', 'canopy', 'willow', 'under']
+
+export const TRAIT_LABELS = [
+  { key: 'leafSurface', label: 'Leaf surface areas' },
+  { key: 'waxySurfaces', label: 'Waxy Surfaces' },
+  { key: 'hairyTextures', label: 'Hairy Textures' },
+  { key: 'leafDensity', label: 'Leaf Density' },
+]
 
 /**
  * Uniform bump applied on top of each tree's sizeScale so groves read as
@@ -96,59 +188,140 @@ const UNDERGROWTH_VISUAL_SCALE = 1.15
 export const TREE_TYPES = ['canopy', 'spire', 'willow', 'fan']
 
 /**
- * Per-type geometry. Trunk heights are moderate (~2.3–3.2m before sizeScale)
- * so crowns need a slight look-up without towering over the room.
+ * Per-type geometry — silhouettes deliberately diverge for species ID.
+ * Trunk heights stay moderate (~2.2–3.4m before sizeScale).
  */
 function getTypeBlueprint(type) {
   switch (type) {
+    // Rhu — tall, skinny, layered needle cones
     case 'spire':
       return {
-        trunkHeight: 2.55 + Math.random() * 0.55,
-        trunkTop: 0.05,
-        trunkBot: 0.15,
-        leafMat: leafMatTeal,
-        glowColor: 0x66ffaa,
+        trunkHeight: 3.0 + Math.random() * 0.45,
+        trunkTop: 0.035,
+        trunkBot: 0.1,
+        leafMat: leafMatRhu,
+        glowColor: 0x1f6b5a,
         buildCanopy: (canopy, trunkHeight, leafMat) => {
           const leaves = []
-          const layers = 5
+          const layers = 7
           for (let i = 0; i < layers; i++) {
             const t = i / (layers - 1)
-            const radius = 0.5 - t * 0.34
+            const radius = 0.38 - t * 0.28
             const cone = new THREE.Mesh(
-              new THREE.ConeGeometry(radius, 0.62 + (1 - t) * 0.3, 7),
+              new THREE.ConeGeometry(Math.max(0.08, radius), 0.55 + (1 - t) * 0.22, 6),
               leafMat
             )
-            cone.position.y = 0.12 + i * 0.48
+            cone.position.y = 0.08 + i * 0.42
             cone.scale.setScalar(0.01)
             cone.castShadow = true
             cone.userData.targetScale = 1
             canopy.add(cone)
             leaves.push(cone)
           }
-          canopy.position.y = trunkHeight * 0.42
+          canopy.position.y = trunkHeight * 0.28
           return leaves
         },
       }
+
+    // Penaga lilin — columnar upright oval (candle form), not droopy
     case 'willow':
       return {
-        trunkHeight: 2.7 + Math.random() * 0.5,
-        trunkTop: 0.055,
-        trunkBot: 0.12,
-        leafMat: leafMatGold,
-        glowColor: 0xd4ff4a,
+        trunkHeight: 2.65 + Math.random() * 0.4,
+        trunkTop: 0.05,
+        trunkBot: 0.13,
+        leafMat: leafMatPenaga,
+        glowColor: 0x145c38,
+        buildCanopy: (canopy, trunkHeight, leafMat) => {
+          const leaves = []
+          const column = [
+            { x: 0, y: 0.55, z: 0, s: 0.95, geo: 0.42 },
+            { x: 0, y: 1.05, z: 0, s: 0.88, geo: 0.38 },
+            { x: 0, y: 1.5, z: 0, s: 0.72, geo: 0.32 },
+            { x: -0.22, y: 0.7, z: 0.1, s: 0.55, geo: 0.28 },
+            { x: 0.22, y: 0.85, z: -0.08, s: 0.55, geo: 0.28 },
+            { x: 0.08, y: 1.25, z: 0.18, s: 0.48, geo: 0.24 },
+          ]
+          column.forEach((pos) => {
+            const leaf = new THREE.Mesh(
+              new THREE.IcosahedronGeometry(pos.geo, 1),
+              leafMat
+            )
+            leaf.position.set(pos.x, pos.y, pos.z)
+            leaf.scale.set(0.01, 0.01, 0.01)
+            leaf.userData.targetScale = pos.s
+            leaf.userData.targetScaleY = pos.s * 1.35
+            leaf.castShadow = true
+            canopy.add(leaf)
+            leaves.push(leaf)
+          })
+          canopy.position.y = trunkHeight * 0.55
+          return leaves
+        },
+      }
+
+    // Angsana — short trunk cue + very wide flat umbrella
+    case 'fan':
+      return {
+        trunkHeight: 2.15 + Math.random() * 0.35,
+        trunkTop: 0.048,
+        trunkBot: 0.14,
+        leafMat: leafMatAngsana,
+        glowColor: 0x3d9e4a,
+        buildCanopy: (canopy, trunkHeight, leafMat) => {
+          const leaves = []
+          const ring = [
+            { x: 0, y: 0.06, z: 0, s: 1.05, geo: 0.48 },
+            { x: -0.95, y: 0.02, z: 0.15, s: 0.78, geo: 0.4 },
+            { x: 0.95, y: 0.02, z: -0.1, s: 0.8, geo: 0.4 },
+            { x: 0.15, y: 0, z: 0.95, s: 0.76, geo: 0.38 },
+            { x: -0.2, y: 0, z: -0.95, s: 0.76, geo: 0.38 },
+            { x: 0.7, y: -0.02, z: 0.65, s: 0.58, geo: 0.3 },
+            { x: -0.7, y: -0.02, z: -0.6, s: 0.58, geo: 0.3 },
+            { x: 0.7, y: -0.02, z: -0.55, s: 0.55, geo: 0.28 },
+            { x: -0.65, y: -0.02, z: 0.6, s: 0.55, geo: 0.28 },
+          ]
+          ring.forEach((pos) => {
+            const leaf = new THREE.Mesh(
+              new THREE.IcosahedronGeometry(pos.geo, 1),
+              leafMat
+            )
+            leaf.position.set(pos.x, pos.y, pos.z)
+            leaf.scale.setScalar(0.01)
+            leaf.castShadow = true
+            leaf.userData.targetScale = pos.s
+            leaf.userData.targetScaleY = pos.s * 0.55
+            canopy.add(leaf)
+            leaves.push(leaf)
+          })
+          canopy.position.y = trunkHeight * 0.98
+          return leaves
+        },
+      }
+
+    // Kelat jambu — tall dense round/oval crown
+    case 'canopy':
+    default:
+      return {
+        trunkHeight: 2.4 + Math.random() * 0.45,
+        trunkTop: 0.06,
+        trunkBot: 0.145,
+        leafMat: leafMatKelat,
+        glowColor: 0x5fd65a,
         buildCanopy: (canopy, trunkHeight, leafMat) => {
           const leaves = []
           const blobs = [
-            { x: 0, y: 0.3, z: 0, s: 1 },
-            { x: -0.5, y: -0.12, z: 0.18, s: 0.72 },
-            { x: 0.5, y: -0.18, z: -0.12, s: 0.76 },
-            { x: 0.12, y: -0.48, z: 0.4, s: 0.62 },
-            { x: -0.22, y: -0.62, z: -0.32, s: 0.66 },
-            { x: 0.36, y: -0.75, z: 0.08, s: 0.52 },
+            { x: 0, y: 0.55, z: 0, s: 1.15, geo: 0.55 },
+            { x: -0.4, y: 0.35, z: 0.25, s: 0.78, geo: 0.4 },
+            { x: 0.42, y: 0.32, z: -0.22, s: 0.82, geo: 0.42 },
+            { x: 0.1, y: 0.2, z: 0.42, s: 0.7, geo: 0.36 },
+            { x: -0.2, y: 0.18, z: -0.4, s: 0.72, geo: 0.36 },
+            { x: 0.28, y: 0.85, z: 0.12, s: 0.62, geo: 0.32 },
+            { x: -0.25, y: 0.82, z: -0.1, s: 0.6, geo: 0.3 },
+            { x: 0, y: 1.05, z: 0, s: 0.55, geo: 0.28 },
           ]
           blobs.forEach((pos) => {
             const leaf = new THREE.Mesh(
-              new THREE.IcosahedronGeometry(0.45, 1),
+              new THREE.IcosahedronGeometry(pos.geo, 1),
               leafMat
             )
             leaf.position.set(pos.x, pos.y, pos.z)
@@ -162,74 +335,6 @@ function getTypeBlueprint(type) {
           return leaves
         },
       }
-    case 'fan':
-      return {
-        trunkHeight: 2.45 + Math.random() * 0.45,
-        trunkTop: 0.042,
-        trunkBot: 0.11,
-        leafMat: leafMatLime,
-        glowColor: 0xccff00,
-        buildCanopy: (canopy, trunkHeight, leafMat) => {
-          const leaves = []
-          const ring = [
-            { x: 0, y: 0.12, z: 0, s: 0.92 },
-            { x: -0.65, y: 0.04, z: 0.12, s: 0.68 },
-            { x: 0.65, y: 0.04, z: -0.08, s: 0.7 },
-            { x: 0.12, y: 0, z: 0.65, s: 0.66 },
-            { x: -0.18, y: 0, z: -0.65, s: 0.68 },
-            { x: 0.5, y: -0.04, z: 0.45, s: 0.52 },
-            { x: -0.5, y: -0.04, z: -0.4, s: 0.52 },
-          ]
-          ring.forEach((pos) => {
-            const leaf = new THREE.Mesh(
-              new THREE.IcosahedronGeometry(0.4, 1),
-              leafMat
-            )
-            leaf.position.set(pos.x, pos.y, pos.z)
-            leaf.scale.setScalar(0.01)
-            leaf.castShadow = true
-            leaf.userData.targetScale = pos.s
-            canopy.add(leaf)
-            leaves.push(leaf)
-          })
-          canopy.position.y = trunkHeight * 0.98
-          return leaves
-        },
-      }
-    case 'canopy':
-    default:
-      return {
-        trunkHeight: 2.35 + Math.random() * 0.5,
-        trunkTop: 0.065,
-        trunkBot: 0.14,
-        leafMat: leafMatLime,
-        glowColor: 0xccff00,
-        buildCanopy: (canopy, trunkHeight, leafMat) => {
-          const leaves = []
-          const blobs = [
-            { x: 0, y: 0.5, z: 0, s: 1.05 },
-            { x: -0.45, y: 0.22, z: 0.22, s: 0.72 },
-            { x: 0.45, y: 0.18, z: -0.18, s: 0.8 },
-            { x: 0.08, y: 0.04, z: 0.45, s: 0.62 },
-            { x: -0.22, y: 0, z: -0.4, s: 0.66 },
-            { x: 0.3, y: 0.58, z: 0.16, s: 0.52 },
-          ]
-          blobs.forEach((pos) => {
-            const leaf = new THREE.Mesh(
-              new THREE.IcosahedronGeometry(0.48, 1),
-              leafMat
-            )
-            leaf.position.set(pos.x, pos.y, pos.z)
-            leaf.scale.setScalar(0.01)
-            leaf.castShadow = true
-            leaf.userData.targetScale = pos.s
-            canopy.add(leaf)
-            leaves.push(leaf)
-          })
-          canopy.position.y = trunkHeight
-          return leaves
-        },
-      }
   }
 }
 
@@ -240,6 +345,7 @@ function getTypeBlueprint(type) {
 export function createGrowingTree(scene, x, y, z, options = {}) {
   const sizeScale = options.sizeScale ?? 1.1
   const startDelay = options.startDelay ?? 0
+  const instantMature = Boolean(options.instantMature)
   const treeType =
     options.treeType ||
     TREE_TYPES[Math.floor(Math.random() * TREE_TYPES.length)]
@@ -251,7 +357,10 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
   // Frozen world anchor — do not write group.position after this
   const group = new THREE.Group()
   group.position.set(x, y, z)
-  group.rotation.y = Math.random() * Math.PI * 2
+  group.rotation.y =
+    typeof options.rotationY === 'number'
+      ? options.rotationY
+      : Math.random() * Math.PI * 2
   group.scale.setScalar(sizeScale * TREE_VISUAL_SCALE)
   group.userData.treeType = treeType
   scene.add(group)
@@ -283,7 +392,7 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
       trunkHeight,
       8
     ),
-    treeType === 'willow' ? trunkMatDark : trunkMat
+    treeType === 'willow' || treeType === 'spire' ? trunkMatDark : trunkMat
   )
   trunk.castShadow = true
   trunk.position.y = 0
@@ -321,8 +430,9 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
     trunk.position.y = trunkHeight / 2
     canopy.visible = true
     leaves.forEach((leaf) => {
-      const s = leaf.userData.targetScale ?? 1
-      leaf.scale.setScalar(s)
+      const sx = leaf.userData.targetScale ?? 1
+      const sy = leaf.userData.targetScaleY ?? sx
+      leaf.scale.set(sx, sy, sx)
     })
 
     // Keep the trunk's shadow — that's the visible "tree is grounded" cue.
@@ -406,19 +516,20 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
     window.setTimeout(() => {
       canopy.visible = true
       leaves.forEach((leaf, i) => {
-        const s = leaf.userData.targetScale ?? 1
+        const sx = leaf.userData.targetScale ?? 1
+        const sy = leaf.userData.targetScaleY ?? sx
         if (animate) {
           animate({
             targets: leaf.scale,
-            x: s,
-            y: s,
-            z: s,
+            x: sx,
+            y: sy,
+            z: sx,
             duration: 2400,
             delay: i * 180,
             easing: 'easeOutCubic',
           })
         } else {
-          leaf.scale.setScalar(s)
+          leaf.scale.set(sx, sy, sx)
         }
       })
     }, 4000)
@@ -434,8 +545,17 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
     }, 7500)
   }
 
-  if (startDelay > 0) window.setTimeout(beginGrowth, startDelay)
-  else beginGrowth()
+  if (instantMature) {
+    if (!options.skipFireflies) {
+      spawnStaticFireflies(group, fireflies, trunkHeight)
+    }
+    hardFreeze()
+    if (typeof options.onMature === 'function') options.onMature()
+  } else if (startDelay > 0) {
+    window.setTimeout(beginGrowth, startDelay)
+  } else {
+    beginGrowth()
+  }
 
   return {
     group,
@@ -459,10 +579,14 @@ export function createGrowingTree(scene, x, y, z, options = {}) {
 export function createUndergrowth(scene, x, y, z, options = {}) {
   const sizeScale = options.sizeScale ?? 0.7
   const startDelay = options.startDelay ?? 0
+  const instantMature = Boolean(options.instantMature)
 
   const group = new THREE.Group()
   group.position.set(x, y, z)
-  group.rotation.y = Math.random() * Math.PI * 2
+  group.rotation.y =
+    typeof options.rotationY === 'number'
+      ? options.rotationY
+      : Math.random() * Math.PI * 2
   group.scale.setScalar(sizeScale * UNDERGROWTH_VISUAL_SCALE)
   scene.add(group)
 
@@ -477,13 +601,30 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
   group.add(stem)
 
   const blob = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.2 + Math.random() * 0.1, 0),
-    Math.random() > 0.5 ? leafMatTeal : leafMatLime
+    new THREE.IcosahedronGeometry(0.22 + Math.random() * 0.12, 0),
+    leafMatShrub
   )
-  blob.position.y = stemH + 0.1
+  blob.position.y = stemH + 0.12
   blob.scale.setScalar(0.01)
   blob.castShadow = true
   group.add(blob)
+
+  // Extra side mounds so hedges read as a low multi-stem clump
+  const sideA = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.14 + Math.random() * 0.08, 0),
+    leafMatShrub
+  )
+  sideA.position.set(-0.18, stemH + 0.02, 0.08)
+  sideA.scale.setScalar(0.01)
+  group.add(sideA)
+
+  const sideB = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.12 + Math.random() * 0.08, 0),
+    leafMatShrub
+  )
+  sideB.position.set(0.16, stemH, -0.1)
+  sideB.scale.setScalar(0.01)
+  group.add(sideB)
 
   const animate = typeof window !== 'undefined' && window.anime ? window.anime : null
 
@@ -491,12 +632,18 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
     if (animate) {
       animate.remove(stem.scale)
       animate.remove(blob.scale)
+      animate.remove(sideA.scale)
+      animate.remove(sideB.scale)
     }
     stem.scale.set(1, 1, 1)
     blob.scale.setScalar(1)
-    // Keep the stem's shadow; drop the blob's (cheaper, visually unnoticeable)
-    blob.castShadow = false
-    blob.receiveShadow = false
+    sideA.scale.setScalar(1)
+    sideB.scale.setScalar(1)
+    // Keep the stem's shadow; drop foliage shadows
+    ;[blob, sideA, sideB].forEach((m) => {
+      m.castShadow = false
+      m.receiveShadow = false
+    })
     stem.receiveShadow = false
     group.traverse((obj) => {
       obj.updateMatrix()
@@ -514,7 +661,7 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
         easing: 'easeOutCubic',
       })
       animate({
-        targets: blob.scale,
+        targets: [blob.scale, sideA.scale, sideB.scale],
         x: 1,
         y: 1,
         z: 1,
@@ -526,12 +673,19 @@ export function createUndergrowth(scene, x, y, z, options = {}) {
     } else {
       stem.scale.y = 1
       blob.scale.setScalar(1)
+      sideA.scale.setScalar(1)
+      sideB.scale.setScalar(1)
       hardFreezeUnder()
     }
   }
 
-  if (startDelay > 0) window.setTimeout(grow, startDelay)
-  else grow()
+  if (instantMature) {
+    hardFreezeUnder()
+  } else if (startDelay > 0) {
+    window.setTimeout(grow, startDelay)
+  } else {
+    grow()
+  }
 
   return {
     group,

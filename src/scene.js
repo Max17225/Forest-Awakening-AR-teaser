@@ -215,6 +215,8 @@ export function initForestPipelineModule() {
 
   const placeObjectTouchHandler = (e) => {
     // Single finger only — two-finger recenter was disabled (caused re-anchor jitter)
+    const speciesPanel = document.getElementById('species-panel')
+    if (speciesPanel && !speciesPanel.classList.contains('hidden')) return
     if (!window.__FA_SPLASH_DISMISSED__ || e.touches.length !== 1 || !surface) {
       return
     }

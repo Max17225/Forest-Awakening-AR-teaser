@@ -147,6 +147,53 @@
 
     <p class="instruction hidden" id="instruction">Tap to awaken the forest</p>
 
+    <!-- Species compare: opens after START AR -->
+    <button
+      type="button"
+      id="species-info-btn"
+      class="species-info-btn hidden"
+      aria-label="Tree species traits"
+    >
+      ⓘ Trees
+    </button>
+
+    <div
+      id="species-panel"
+      class="species-panel hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="species-panel-title"
+    >
+      <div class="species-panel-card">
+        <button
+          type="button"
+          id="species-panel-close"
+          class="species-panel-close"
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <h2 id="species-panel-title" class="species-panel-title">
+          Casuarina equisetifolia
+        </h2>
+
+        <div class="species-panel-body">
+          <div class="species-preview-wrap">
+            <canvas id="species-preview-canvas" width="200" height="240"></canvas>
+          </div>
+          <div id="species-trait-bars" class="species-trait-bars"></div>
+        </div>
+
+        <p class="species-panel-hint">
+          Estimates for comparison of how each tree differs and improves air
+          quality.
+        </p>
+
+        <div id="species-tabs" class="species-tabs" role="tablist"></div>
+      </div>
+    </div>
+
     <!--
       HUD OVERLAY (pointer-events: none so taps fall through to AR)
     -->
