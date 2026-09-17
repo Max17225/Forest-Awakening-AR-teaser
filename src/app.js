@@ -70,23 +70,46 @@ function fetchLiveAqi(lat, lon) {
     .catch(() => null)
 }
 
-/** Reverse-geocode for a readable area label (no API key). */
+/** Reverse-geocode GPS → area label via OpenStreetMap Nominatim. */
 function fetchPlaceLabel(lat, lon) {
   const url =
-    `https://api.bigdatacloud.net/data/reverse-geocode-client` +
-    `?latitude=${encodeURIComponent(lat)}` +
-    `&longitude=${encodeURIComponent(lon)}` +
-    `&localityLanguage=en`
-  return fetch(url)
+    `https://nominatim.openstreetmap.org/reverse` +
+    `?lat=${encodeURIComponent(lat)}` +
+    `&lon=${encodeURIComponent(lon)}` +
+    `&format=jsonv2` +
+    `&addressdetails=1` +
+    `&zoom=14` +
+    `&accept-language=en`
+  return fetch(url, {
+    headers: {
+      Accept: 'application/json',
+    },
+  })
     .then((r) => (r.ok ? r.json() : null))
     .then((data) => {
       if (!data) return null
-      const city =
-        data.city || data.locality || data.principalSubdivision || null
-      const country = data.countryName || null
-      if (city && country) return `${city}, ${country}`
-      if (city) return city
-      if (country) return country
+      const a = data.address || {}
+      const area =
+        a.suburb ||
+        a.neighbourhood ||
+        a.city_district ||
+        a.city ||
+        a.town ||
+        a.village ||
+        a.municipality ||
+        a.county ||
+        null
+      const region = a.state || a.region || null
+      const country = a.country || null
+
+      // Prefer "Suburb, City" or "City, Country" — skip repeating same name
+      const parts = []
+      if (area) parts.push(area)
+      if (region && region !== area) parts.push(region)
+      else if (country && country !== area) parts.push(country)
+
+      if (parts.length) return parts.slice(0, 2).join(', ')
+      if (data.name) return data.name
       return null
     })
     .catch(() => null)
@@ -105,7 +128,7 @@ function getGpsCoords() {
           lon: pos.coords.longitude,
         }),
       () => resolve(null),
-      { enableHighAccuracy: false, timeout: 4000, maximumAge: 180000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     )
   })
 }
