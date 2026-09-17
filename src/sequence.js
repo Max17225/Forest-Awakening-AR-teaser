@@ -4,7 +4,7 @@
  * On-screen story:
  *   1) Dashboard with local starting temp + AQI (from app.js Open-Meteo cache)
  *   2) While trees grow, numbers ease using species-weighted model estimates
- *   3) Lock "Modeled estimate"
+ *   3) Lock "Estimate from your trees"
  *
  * Place data: ONLY reads window.__FA_PLACE_CACHE__ (filled before XR8.run).
  */
@@ -182,12 +182,12 @@ function animateLiveStats(impact, durationMs, els) {
     tempVal.classList.remove('drop')
   }
   if (co2Val) {
-    co2Val.textContent = '0.0 kg'
+    co2Val.textContent = '0.0'
     co2Val.classList.add('warning')
     co2Val.classList.remove('drop')
   }
   if (aqiVal) {
-    aqiVal.textContent = `AQI ${impact.airStart}`
+    aqiVal.textContent = `${impact.airStart}`
     aqiVal.classList.add('warning')
     aqiVal.classList.remove('drop')
   }
@@ -204,8 +204,8 @@ function animateLiveStats(impact, durationMs, els) {
       )
 
       if (tempVal) tempVal.textContent = `${tempNow.toFixed(1)}°C`
-      if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)} kg`
-      if (aqiVal) aqiVal.textContent = `AQI ${airNow}`
+      if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)}`
+      if (aqiVal) aqiVal.textContent = `${airNow}`
 
       if (u < 1) {
         requestAnimationFrame(tick)
@@ -218,15 +218,15 @@ function animateLiveStats(impact, durationMs, els) {
 }
 
 function statusWorking(impact) {
-  if (impact.liveTemp && impact.liveAqi) return 'Live temp + AQI · modeling…'
-  if (impact.liveTemp) return 'Live temp · modeling canopy…'
-  if (impact.liveAqi) return 'Live AQI · modeling canopy…'
-  return 'Local estimate · modeling…'
+  if (impact.liveTemp && impact.liveAqi) return 'Trees working · live local air'
+  if (impact.liveTemp) return 'Trees working · live temp'
+  if (impact.liveAqi) return 'Trees working · live AQI'
+  return 'Trees working…'
 }
 
 function statusLocked(impact) {
-  if (impact.hasGps) return 'Modeled estimate · local zone'
-  return 'Modeled estimate'
+  if (impact.hasGps) return 'Estimate from your trees · local air'
+  return 'Estimate from your trees'
 }
 
 /**
@@ -284,13 +284,13 @@ export async function playAwakeningSequence(treeMeta) {
       tempVal.classList.add('drop')
     }
     if (co2Val) {
-      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)} kg / yr`
+      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)}`
       co2Val.classList.remove('warning')
       co2Val.classList.add('drop')
     }
     if (aqiVal) {
       aqiVal.innerHTML =
-        `<span style="opacity:0.55;font-size:11px">${finalImpact.airStart} →</span> ${finalImpact.airEnd} · MODEL`
+        `<span class="aqi-from">${finalImpact.airStart}</span><span class="aqi-arrow">→</span>${finalImpact.airEnd}`
       aqiVal.classList.remove('warning')
       aqiVal.classList.add('drop')
     }
@@ -313,10 +313,10 @@ export async function refreshImpactDisplay(allTreeMeta) {
 
   tempVal.innerHTML =
     `${impact.baselineTemp.toFixed(1)}°C <span style="font-size:14px">→</span> ${impact.finalTemp.toFixed(1)}°C`
-  if (co2Val) co2Val.textContent = `${impact.co2Kg.toFixed(1)} kg / yr`
+  if (co2Val) co2Val.textContent = `${impact.co2Kg.toFixed(1)}`
   if (aqiVal) {
     aqiVal.innerHTML =
-      `<span style="opacity:0.55;font-size:11px">${impact.airStart} →</span> ${impact.airEnd} · MODEL`
+      `<span class="aqi-from">${impact.airStart}</span><span class="aqi-arrow">→</span>${impact.airEnd}`
   }
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
 }

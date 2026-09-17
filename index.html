@@ -165,16 +165,22 @@
             <li>Tap again to plant more clusters</li>
           </ol>
           <p class="howto-note">
-            Starting temp and AQI use live local data when available. Improvements
-            are modeled estimates from the trees you plant.
+            Starting temp and AQI use live local data when available. CO₂ filtered
+            and air improvements are estimates from the trees you plant.
           </p>
           <button type="button" id="howto-next" class="howto-btn">Next</button>
         </div>
         <div id="howto-page-2" data-howto-page="2" class="hidden">
           <h2 class="howto-title">How it works</h2>
           <p class="howto-body">
-            These species suit Malaysia. Broad, dense, waxy, or needle-like
-            surfaces trap haze particles; shrubs filter air near walking height.
+            These species are suitable for Malaysia. Leaf surface area, waxy
+            surfaces, hairy textures, and leaf density help leaves capture haze
+            particles — which can improve local air quality over time.
+          </p>
+          <p class="howto-body">
+            One or two trees barely move the needle. A denser stand (many trees
+            and shrubs close together) filters more air near where people walk
+            and rest.
           </p>
           <ul class="howto-species">
             <li><em>Casuarina equisetifolia</em> — needle-like year-round capture</li>
@@ -246,7 +252,7 @@
       <!--
         Environmental HUD:
         - LOCAL TEMP / AQI start from Open-Meteo when GPS is available
-        - CO₂ and improvements are species-weighted modeled estimates
+        - CO₂ filtered + air improvement are estimates from planted trees
       -->
       <div class="dashboard" id="dashboard" aria-hidden="true">
         <div class="status-text">
@@ -255,17 +261,25 @@
         </div>
 
         <div class="stat-row">
-          <span class="stat-label">LOCAL TEMP</span>
+          <div class="stat-label-block">
+            <span class="stat-label">LOCAL TEMP</span>
+          </div>
           <span class="stat-value warning" id="temp-val">—°C</span>
         </div>
 
         <div class="stat-row">
-          <span class="stat-label">CO₂ MODELED</span>
-          <span class="stat-value warning" id="co2-val">0.0 kg</span>
+          <div class="stat-label-block">
+            <span class="stat-label">CO₂ FILTERED</span>
+            <span class="stat-sublabel">estimated · kg / yr</span>
+          </div>
+          <span class="stat-value warning" id="co2-val">0.0</span>
         </div>
 
         <div class="stat-row">
-          <span class="stat-label">AIR AQI</span>
+          <div class="stat-label-block">
+            <span class="stat-label">AIR AQI</span>
+            <span class="stat-sublabel">live start · clearer with trees</span>
+          </div>
           <span class="stat-value warning" id="aqi-val">—</span>
         </div>
       </div>
