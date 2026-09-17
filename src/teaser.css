@@ -326,3 +326,199 @@ body {
   color: var(--lime);
 }
 
+
+/* --- Species compare panel (3D left + trait bars right) --- */
+.species-info-btn {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 9997;
+  pointer-events: auto;
+  border: 1px solid rgba(196, 255, 0, 0.55);
+  background: rgba(17, 17, 17, 0.88);
+  color: #c4ff00;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  box-shadow: 0 0 18px rgba(196, 255, 0, 0.22);
+  cursor: pointer;
+}
+
+.species-info-btn.hidden {
+  display: none;
+}
+
+.species-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.species-panel.hidden {
+  display: none;
+}
+
+.species-panel-card {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  background: rgba(14, 20, 16, 0.96);
+  border: 1px solid rgba(196, 255, 0, 0.45);
+  border-radius: 18px;
+  padding: 16px 14px 14px;
+  box-shadow:
+    0 0 0 1px rgba(196, 255, 0, 0.12) inset,
+    0 16px 40px rgba(0, 0, 0, 0.5);
+  color: #e8ffb0;
+}
+
+.species-panel-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #c4ff00;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.species-panel-title {
+  margin: 0 28px 12px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #c4ff00;
+  letter-spacing: 0.2px;
+  font-style: italic;
+}
+
+.species-panel-body {
+  display: grid;
+  grid-template-columns: minmax(110px, 38%) 1fr;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 200px;
+}
+
+.species-preview-wrap {
+  border: 1px solid rgba(196, 255, 0, 0.22);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 50% 70%, rgba(80, 120, 60, 0.35), transparent 70%),
+    rgba(8, 14, 10, 0.9);
+  overflow: hidden;
+  min-height: 200px;
+}
+
+#species-preview-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.species-trait-bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.trait-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.trait-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: rgba(232, 255, 176, 0.9);
+}
+
+.trait-value {
+  font-size: 11px;
+  font-weight: 800;
+  color: #c4ff00;
+}
+
+.trait-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(196, 255, 0, 0.15);
+}
+
+.trait-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f7a3a, #c4ff00);
+  box-shadow: 0 0 10px rgba(196, 255, 0, 0.35);
+  transition: width 0.35s ease;
+}
+
+.species-panel-hint {
+  margin: 14px 0 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(208, 213, 216, 0.78);
+}
+
+.species-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.species-tab {
+  flex: 1 1 auto;
+  min-width: calc(50% - 6px);
+  border: 1px solid rgba(196, 255, 0, 0.28);
+  background: rgba(196, 255, 0, 0.06);
+  color: rgba(232, 255, 176, 0.85);
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 600;
+  padding: 8px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.species-tab.is-active {
+  border-color: #c4ff00;
+  background: rgba(196, 255, 0, 0.18);
+  color: #c4ff00;
+  box-shadow: 0 0 12px rgba(196, 255, 0, 0.2);
+}
+
+@media (max-width: 380px) {
+  .species-panel-body {
+    grid-template-columns: 1fr;
+  }
+  .species-preview-wrap,
+  #species-preview-canvas {
+    min-height: 160px;
+  }
+}

@@ -16,6 +16,10 @@
 
 import * as THREE from 'three'
 import { initForestPipelineModule } from './scene.js'
+import {
+  initSpeciesPanel,
+  showSpeciesInfoButton,
+} from './species-panel.js'
 
 // XR8.Threejs expects THREE on window (official 8th Wall placeground pattern)
 window.THREE = { ...THREE }
@@ -192,9 +196,13 @@ const dismissSplash = () => {
     window.setTimeout(() => {
       splashScreen.classList.add('hidden')
       if (instruction) instruction.classList.remove('hidden')
+      showSpeciesInfoButton()
     }, 400)
   } else if (instruction) {
     instruction.classList.remove('hidden')
+    showSpeciesInfoButton()
+  } else {
+    showSpeciesInfoButton()
   }
 }
 
@@ -203,15 +211,22 @@ let experienceStarted = false
 const startExperience = () => {
   if (experienceStarted || !window.XRExtras || !window.XR8) return
   experienceStarted = true
+  initSpeciesPanel()
   XRExtras.Loading.showLoading({ onxrloaded: onXrLoaded })
 }
 
 if (!isMobileDevice()) {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupDesktopSplash)
+    document.addEventListener('DOMContentLoaded', () => {
+      initSpeciesPanel()
+      setupDesktopSplash()
+    })
   } else {
+    initSpeciesPanel()
     setupDesktopSplash()
   }
+  // Desktop can open the species compare panel without AR
+  window.setTimeout(() => showSpeciesInfoButton(), 0)
 } else {
   window.addEventListener('xrextrasloaded', startExperience)
   window.addEventListener('xrloaded', startExperience)
