@@ -361,7 +361,8 @@ body {
 .species-info-btn {
   position: fixed;
   left: max(12px, env(safe-area-inset-left));
-  bottom: max(18px, env(safe-area-inset-bottom));
+  top: max(14px, calc(env(safe-area-inset-top) + 10px));
+  bottom: auto;
   z-index: 9997;
   pointer-events: auto;
   border: 1px solid rgba(196, 255, 0, 0.55);
@@ -431,11 +432,20 @@ body {
 
 .species-panel-title {
   margin: 0 28px 12px 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   color: #c4ff00;
   letter-spacing: 0.2px;
+  font-style: normal;
+}
+
+.species-panel-title .species-sci {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
   font-style: italic;
+  color: rgba(232, 255, 176, 0.7);
 }
 
 .species-panel-body {
@@ -527,13 +537,29 @@ body {
   background: rgba(196, 255, 0, 0.06);
   color: rgba(232, 255, 176, 0.85);
   font-size: 10px;
-  font-style: italic;
+  font-style: normal;
   font-weight: 600;
   padding: 8px 8px;
   border-radius: 10px;
   cursor: pointer;
   text-align: center;
   line-height: 1.25;
+}
+
+.species-tab strong {
+  display: block;
+  font-size: 12px;
+  color: #c4ff00;
+  font-weight: 800;
+}
+
+.species-tab span {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  font-style: italic;
+  opacity: 0.7;
+  font-weight: 500;
 }
 
 .species-tab.is-active {
@@ -614,8 +640,13 @@ body {
   color: #d0d5d8;
 }
 
-.howto-species em {
+.howto-species strong {
   color: #c4ff00;
+  font-weight: 800;
+}
+
+.howto-species em {
+  color: rgba(208, 213, 216, 0.85);
   font-style: italic;
 }
 

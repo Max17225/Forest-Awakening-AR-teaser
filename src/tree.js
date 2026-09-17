@@ -114,6 +114,7 @@ const LEAF_MATERIALS = [
 export const SPECIES_INFO = {
   spire: {
     id: 'spire',
+    localName: 'Rhu',
     scientific: 'Casuarina equisetifolia',
     /** Modeled mature annual CO₂ uptake (kg/year) — educational estimate */
     co2KgYear: 12,
@@ -126,6 +127,7 @@ export const SPECIES_INFO = {
   },
   fan: {
     id: 'fan',
+    localName: 'Angsana',
     scientific: 'Pterocarpus indicus',
     co2KgYear: 20,
     traits: {
@@ -137,6 +139,7 @@ export const SPECIES_INFO = {
   },
   canopy: {
     id: 'canopy',
+    localName: 'Kelat jambu',
     scientific: 'Syzygium grande',
     co2KgYear: 16,
     traits: {
@@ -148,6 +151,7 @@ export const SPECIES_INFO = {
   },
   willow: {
     id: 'willow',
+    localName: 'Penaga lilin',
     scientific: 'Mesua ferrea',
     co2KgYear: 14,
     traits: {
@@ -159,6 +163,7 @@ export const SPECIES_INFO = {
   },
   under: {
     id: 'under',
+    localName: 'Teh-tehan',
     scientific: 'Acalypha siamensis',
     co2KgYear: 3,
     traits: {
