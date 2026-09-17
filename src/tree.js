@@ -270,7 +270,7 @@ function getTypeBlueprint(type) {
         },
       }
 
-    // Angsana — short trunk cue + very wide flat umbrella
+    // Angsana — short trunk + compact umbrella (not overly spread)
     case 'fan':
       return {
         trunkHeight: 2.15 + Math.random() * 0.35,
@@ -281,15 +281,15 @@ function getTypeBlueprint(type) {
         buildCanopy: (canopy, trunkHeight, leafMat) => {
           const leaves = []
           const ring = [
-            { x: 0, y: 0.06, z: 0, s: 1.05, geo: 0.48 },
-            { x: -0.95, y: 0.02, z: 0.15, s: 0.78, geo: 0.4 },
-            { x: 0.95, y: 0.02, z: -0.1, s: 0.8, geo: 0.4 },
-            { x: 0.15, y: 0, z: 0.95, s: 0.76, geo: 0.38 },
-            { x: -0.2, y: 0, z: -0.95, s: 0.76, geo: 0.38 },
-            { x: 0.7, y: -0.02, z: 0.65, s: 0.58, geo: 0.3 },
-            { x: -0.7, y: -0.02, z: -0.6, s: 0.58, geo: 0.3 },
-            { x: 0.7, y: -0.02, z: -0.55, s: 0.55, geo: 0.28 },
-            { x: -0.65, y: -0.02, z: 0.6, s: 0.55, geo: 0.28 },
+            { x: 0, y: 0.08, z: 0, s: 1.0, geo: 0.46 },
+            { x: -0.52, y: 0.04, z: 0.1, s: 0.78, geo: 0.36 },
+            { x: 0.52, y: 0.04, z: -0.08, s: 0.8, geo: 0.36 },
+            { x: 0.1, y: 0.02, z: 0.52, s: 0.76, geo: 0.34 },
+            { x: -0.12, y: 0.02, z: -0.52, s: 0.76, geo: 0.34 },
+            { x: 0.38, y: 0, z: 0.36, s: 0.58, geo: 0.28 },
+            { x: -0.38, y: 0, z: -0.34, s: 0.58, geo: 0.28 },
+            { x: 0.36, y: 0, z: -0.32, s: 0.55, geo: 0.26 },
+            { x: -0.34, y: 0, z: 0.34, s: 0.55, geo: 0.26 },
           ]
           ring.forEach((pos) => {
             const leaf = new THREE.Mesh(
@@ -300,7 +300,7 @@ function getTypeBlueprint(type) {
             leaf.scale.setScalar(0.01)
             leaf.castShadow = true
             leaf.userData.targetScale = pos.s
-            leaf.userData.targetScaleY = pos.s * 0.55
+            leaf.userData.targetScaleY = pos.s * 0.62
             canopy.add(leaf)
             leaves.push(leaf)
           })
