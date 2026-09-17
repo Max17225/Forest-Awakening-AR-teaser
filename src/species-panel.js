@@ -42,8 +42,8 @@ function renderCounts() {
   if (!countsEl) return
   countsEl.innerHTML = SPECIES_ORDER.map((id) => {
     const n = plantedCounts[id] || 0
-    const short = SPECIES_INFO[id].scientific.split(' ')[0]
-    return `<span class="species-count${n > 0 ? ' is-planted' : ''}"><em>${short}</em> ${n}</span>`
+    const name = SPECIES_INFO[id].localName
+    return `<span class="species-count${n > 0 ? ' is-planted' : ''}"><em>${name}</em> ${n}</span>`
   }).join('')
 }
 
@@ -68,7 +68,7 @@ function buildTabs() {
     btn.type = 'button'
     btn.className = 'species-tab'
     btn.dataset.species = id
-    btn.textContent = info.scientific
+    btn.innerHTML = `<strong>${info.localName}</strong><span>${info.scientific}</span>`
     btn.addEventListener('click', (e) => {
       e.stopPropagation()
       selectSpecies(id)
@@ -201,7 +201,9 @@ function stopSpin() {
 export function selectSpecies(typeId) {
   if (!SPECIES_INFO[typeId]) return
   currentType = typeId
-  if (titleEl) titleEl.textContent = SPECIES_INFO[typeId].scientific
+  if (titleEl) {
+    titleEl.innerHTML = `${SPECIES_INFO[typeId].localName} <span class="species-sci">${SPECIES_INFO[typeId].scientific}</span>`
+  }
   renderBars(typeId)
   mountPreviewTree(typeId)
   resizePreview()

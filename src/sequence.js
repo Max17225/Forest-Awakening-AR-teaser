@@ -12,6 +12,8 @@
 import { SPECIES_INFO } from './tree.js'
 
 let sequenceRunning = false
+/** True once the first grove HUD has locked its numbers */
+let impactRevealDone = false
 
 /** Young AR trees are not full mature yield */
 const MATURITY = 0.35
@@ -134,11 +136,12 @@ export function computeImpactFromTrees(treeMeta, place) {
     coolRaw += size * (info.traits.leafSurface / 100) * 0.09
   }
 
-  const tempDrop = diminishingReturns(coolRaw, 2.0)
-  const co2Kg = diminishingReturns(co2Raw, 42)
-  const airDrop = diminishingReturns(airRaw, 28)
+  const tempDrop = diminishingReturns(coolRaw, 2.2)
+  // Higher caps so extra taps still visibly move the numbers
+  const co2Kg = diminishingReturns(co2Raw, 95)
+  const airDrop = diminishingReturns(airRaw, 48)
   const airEnd = Math.max(
-    12,
+    10,
     Math.round(place.airStart - airDrop)
   )
 
@@ -182,7 +185,7 @@ function animateLiveStats(impact, durationMs, els) {
     tempVal.classList.remove('drop')
   }
   if (co2Val) {
-    co2Val.textContent = '0.0'
+    co2Val.textContent = '0.0 kg/year'
     co2Val.classList.add('warning')
     co2Val.classList.remove('drop')
   }
@@ -204,7 +207,7 @@ function animateLiveStats(impact, durationMs, els) {
       )
 
       if (tempVal) tempVal.textContent = `${tempNow.toFixed(1)}°C`
-      if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)}`
+      if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)} kg/year`
       if (aqiVal) aqiVal.textContent = `${airNow}`
 
       if (u < 1) {
@@ -284,7 +287,7 @@ export async function playAwakeningSequence(treeMeta) {
       tempVal.classList.add('drop')
     }
     if (co2Val) {
-      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)}`
+      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)} kg/year`
       co2Val.classList.remove('warning')
       co2Val.classList.add('drop')
     }
@@ -294,29 +297,45 @@ export async function playAwakeningSequence(treeMeta) {
       aqiVal.classList.remove('warning')
       aqiVal.classList.add('drop')
     }
+
+    impactRevealDone = true
   }, 2200)
 }
 
 /**
+ * Bumps dashboard numbers when more trees are planted.
+ * Safe during/after the first reveal — does not require the CSS lock class.
  * @param {{ sizeScale: number, treeType?: string }[]} allTreeMeta
  */
 export async function refreshImpactDisplay(allTreeMeta) {
+  const dashboard = document.getElementById('dashboard')
   const tempVal = document.getElementById('temp-val')
   const co2Val = document.getElementById('co2-val')
   const aqiVal = document.getElementById('aqi-val')
   const statusMsg = document.getElementById('status-message')
 
-  if (!tempVal || !tempVal.classList.contains('drop')) return
+  if (!dashboard || !dashboard.classList.contains('is-visible')) return
+  if (!tempVal) return
 
   const place = await resolvePlaceContext()
   const impact = computeImpactFromTrees(allTreeMeta, place)
 
   tempVal.innerHTML =
     `${impact.baselineTemp.toFixed(1)}°C <span style="font-size:14px">→</span> ${impact.finalTemp.toFixed(1)}°C`
-  if (co2Val) co2Val.textContent = `${impact.co2Kg.toFixed(1)}`
+  tempVal.classList.remove('warning')
+  tempVal.classList.add('drop')
+
+  if (co2Val) {
+    co2Val.textContent = `${impact.co2Kg.toFixed(1)} kg/year`
+    co2Val.classList.remove('warning')
+    co2Val.classList.add('drop')
+  }
   if (aqiVal) {
     aqiVal.innerHTML =
       `<span class="aqi-from">${impact.airStart}</span><span class="aqi-arrow">→</span>${impact.airEnd}`
+    aqiVal.classList.remove('warning')
+    aqiVal.classList.add('drop')
   }
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
+  impactRevealDone = true
 }

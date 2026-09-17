@@ -172,13 +172,6 @@ export function initForestPipelineModule() {
           sizeScale,
           startDelay: i * 90,
           treeType,
-          onMature:
-            i === EXTRA_CANOPY_COUNT - 1
-              ? () => {
-                  syncCounts()
-                  refreshImpactDisplay(allTreeMeta)
-                }
-              : undefined,
         })
       )
     }
@@ -198,7 +191,9 @@ export function initForestPipelineModule() {
       )
     }
 
+    // Update HUD right away so extra taps visibly move the numbers
     syncCounts()
+    refreshImpactDisplay(allTreeMeta)
     scheduleShadowBake()
   }
 
