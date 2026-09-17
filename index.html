@@ -147,7 +147,50 @@
 
     <p class="instruction hidden" id="instruction">Tap to awaken the forest</p>
 
-    <!-- Species compare: opens after START AR -->
+    <!-- How-to (after START AR, before planting) -->
+    <div
+      id="howto-modal"
+      class="howto-modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="howto-card splash-card">
+        <div id="howto-page-1" data-howto-page="1">
+          <h2 class="howto-title">How to plant</h2>
+          <ol class="howto-list">
+            <li>Point your phone at the ground</li>
+            <li>Tap once to grow a Malaysia tree grove</li>
+            <li>Watch temp, CO₂, and AQI update on the dashboard</li>
+            <li>Tap again to plant more clusters</li>
+          </ol>
+          <p class="howto-note">
+            Starting temp and AQI use live local data when available. Improvements
+            are modeled estimates from the trees you plant.
+          </p>
+          <button type="button" id="howto-next" class="howto-btn">Next</button>
+        </div>
+        <div id="howto-page-2" data-howto-page="2" class="hidden">
+          <h2 class="howto-title">How it works</h2>
+          <p class="howto-body">
+            These species suit Malaysia. Broad, dense, waxy, or needle-like
+            surfaces trap haze particles; shrubs filter air near walking height.
+          </p>
+          <ul class="howto-species">
+            <li><em>Casuarina equisetifolia</em> — needle-like year-round capture</li>
+            <li><em>Pterocarpus indicus</em> — wide dense shade canopy</li>
+            <li><em>Syzygium grande</em> — evergreen broadleaf filter</li>
+            <li><em>Mesua ferrea</em> — dense upright foliage</li>
+            <li><em>Acalypha siamensis</em> — near-ground hedge filter</li>
+          </ul>
+          <button type="button" id="howto-done" class="howto-btn">
+            Got it — plant trees
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Species compare: opens after how-to -->
     <button
       type="button"
       id="species-info-btn"
@@ -190,6 +233,7 @@
           quality.
         </p>
 
+        <div id="species-planted-counts" class="species-planted-counts"></div>
         <div id="species-tabs" class="species-tabs" role="tablist"></div>
       </div>
     </div>
@@ -200,10 +244,9 @@
     <div id="ui-layer" aria-live="polite">
 
       <!--
-        Live-ish environmental HUD:
-        - LOCAL TEMP starts from Open-Meteo (GPS) when available, then eases down a little
-        - CO₂ FILTERED starts at 0 kg and rises as trees grow (theatrical, per-tree sizes)
-        - AIR INDEX eases toward a clearer number
+        Environmental HUD:
+        - LOCAL TEMP / AQI start from Open-Meteo when GPS is available
+        - CO₂ and improvements are species-weighted modeled estimates
       -->
       <div class="dashboard" id="dashboard" aria-hidden="true">
         <div class="status-text">
@@ -217,12 +260,12 @@
         </div>
 
         <div class="stat-row">
-          <span class="stat-label">CO₂ FILTERED</span>
+          <span class="stat-label">CO₂ MODELED</span>
           <span class="stat-value warning" id="co2-val">0.0 kg</span>
         </div>
 
         <div class="stat-row">
-          <span class="stat-label">AIR INDEX</span>
+          <span class="stat-label">AIR AQI</span>
           <span class="stat-value warning" id="aqi-val">—</span>
         </div>
       </div>

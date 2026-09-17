@@ -2,16 +2,19 @@
  * sequence.js — HUD puppeteer while / after the forest grows
  *
  * On-screen story:
- *   1) Dashboard with local starting temp (from app.js cache / Open-Meteo)
- *   2) While trees grow, numbers ease: temp ↓ a little, CO₂ kg ↑, air index ↓
- *   3) Lock "Impact verified"
- *   4) Keep dashboard visible + show bottom brand lockup (Far Out logo, then Forest Awakening)
+ *   1) Dashboard with local starting temp + AQI (from app.js Open-Meteo cache)
+ *   2) While trees grow, numbers ease using species-weighted model estimates
+ *   3) Lock "Modeled estimate"
  *
  * Place data: ONLY reads window.__FA_PLACE_CACHE__ (filled before XR8.run).
- * Does NOT call geolocation here — mid-AR prompts broke SLAM anchoring.
  */
 
+import { SPECIES_INFO } from './tree.js'
+
 let sequenceRunning = false
+
+/** Young AR trees are not full mature yield */
+const MATURITY = 0.35
 
 function mulberry32(seed) {
   let a = seed >>> 0
@@ -33,19 +36,26 @@ function hashString(str) {
   return h >>> 0
 }
 
-/** Ease 0→1 with a soft ease-out so the last seconds settle calmly */
 function easeOutCubic(t) {
   return 1 - (1 - t) ** 3
 }
 
-/**
- * Real API used from app.js prefetch (Open-Meteo). Sequence only reads the cache.
- * CO₂ / air index are theatrical but place-seeded so cities don't all match.
- */
+function diminishingReturns(raw, cap) {
+  return cap * (1 - Math.exp(-raw / cap))
+}
+
+function traitCaptureScore(traits) {
+  if (!traits) return 0.55
+  const sum =
+    (traits.leafSurface ?? 0) +
+    (traits.waxySurfaces ?? 0) +
+    (traits.hairyTextures ?? 0) +
+    (traits.leafDensity ?? 0)
+  return sum / 400
+}
 
 /**
  * Build place context from the PREFETCH cache (set in app.js before XR8.run).
- * Never calls geolocation here — that mid-AR prompt was breaking SLAM anchoring.
  */
 async function resolvePlaceContext() {
   const cache = window.__FA_PLACE_CACHE__ || {}
@@ -54,6 +64,8 @@ async function resolvePlaceContext() {
   let placeKey
   let baselineTemp
   let liveTemp = false
+  let liveAqi = false
+  let airStart
 
   if (coords) {
     const latBucket = coords.lat.toFixed(2)
@@ -69,6 +81,11 @@ async function resolvePlaceContext() {
       baselineTemp = 37.5 - absLat * 0.32 + (rand() - 0.5) * 2.4
       baselineTemp = Math.min(40, Math.max(18, baselineTemp))
     }
+
+    if (typeof cache.liveAqi === 'number' && Number.isFinite(cache.liveAqi)) {
+      airStart = Math.round(cache.liveAqi)
+      liveAqi = true
+    }
   } else {
     placeKey = [
       'proxy',
@@ -81,53 +98,49 @@ async function resolvePlaceContext() {
     baselineTemp = 27 + rand() * 10
   }
 
-  const rand = mulberry32(hashString(`${placeKey}|gentle-rates`))
-
-  const tempPerSize = 0.055 + rand() * 0.04
-  const co2PerSize = 1.6 + rand() * 1.1
-  const airStart = Math.round(72 + rand() * 22)
-  const airDropPerSize = 1.8 + rand() * 1.2
+  if (airStart == null) {
+    const rand = mulberry32(hashString(`${placeKey}|aqi-fallback`))
+    airStart = Math.round(55 + rand() * 40)
+  }
 
   return {
     placeKey,
     hasGps: Boolean(coords),
     liveTemp,
+    liveAqi,
     baselineTemp,
-    tempPerSize,
-    co2PerSize,
     airStart,
-    airDropPerSize,
   }
 }
 
 /**
- * Smooth diminishing-returns curve: keeps climbing as more trees are
- * planted (so the dashboard stays "alive" across many taps) but each
- * additional tree matters less and less, so it eases toward `cap` instead
- * of hard-clipping to it — no sudden jump to a maxed-out, exaggerated
- * number after just a couple of extra plantings.
- */
-function diminishingReturns(totalSize, perSize, cap) {
-  const raw = totalSize * perSize
-  return cap * (1 - Math.exp(-raw / cap))
-}
-
-/**
- * Per-tree sum → modest totals that keep moving (not capped-and-frozen)
- * as more groves get planted, but never feel exaggerated.
- * @param {{ sizeScale: number }[]} treeMeta
- * @param {Awaited<ReturnType<typeof resolvePlaceContext>>} place
+ * Species-weighted modeled impact.
+ * @param {{ sizeScale: number, treeType?: string }[]} treeMeta
  */
 export function computeImpactFromTrees(treeMeta, place) {
-  let totalSize = 0
+  let co2Raw = 0
+  let airRaw = 0
+  let coolRaw = 0
+
   for (let i = 0; i < treeMeta.length; i++) {
-    totalSize += treeMeta[i].sizeScale
+    const size = treeMeta[i].sizeScale || 1
+    const type = treeMeta[i].treeType || 'canopy'
+    const info = SPECIES_INFO[type] || SPECIES_INFO.canopy
+    const capture = traitCaptureScore(info.traits)
+    const co2Rate = info.co2KgYear ?? 14
+
+    co2Raw += co2Rate * size * MATURITY
+    airRaw += size * capture * 2.4
+    coolRaw += size * (info.traits.leafSurface / 100) * 0.09
   }
 
-  const tempDrop = diminishingReturns(totalSize, place.tempPerSize, 2.1)
-  const co2Kg = diminishingReturns(totalSize, place.co2PerSize, 38)
-  const airDrop = diminishingReturns(totalSize, place.airDropPerSize, 38)
-  const airEnd = Math.max(28, Math.round(place.airStart - airDrop))
+  const tempDrop = diminishingReturns(coolRaw, 2.0)
+  const co2Kg = diminishingReturns(co2Raw, 42)
+  const airDrop = diminishingReturns(airRaw, 28)
+  const airEnd = Math.max(
+    12,
+    Math.round(place.airStart - airDrop)
+  )
 
   const baseline = Number(place.baselineTemp.toFixed(1))
   const drop = Number(tempDrop.toFixed(1))
@@ -141,6 +154,7 @@ export function computeImpactFromTrees(treeMeta, place) {
     airStart: place.airStart,
     airEnd,
     liveTemp: place.liveTemp,
+    liveAqi: place.liveAqi,
     hasGps: place.hasGps,
   }
 }
@@ -158,16 +172,10 @@ function startStatusPulse() {
   })
 }
 
-/**
- * Tick HUD numbers from start → end while the AR forest is growing.
- * @param {ReturnType<typeof computeImpactFromTrees>} impact
- * @param {number} durationMs
- */
 function animateLiveStats(impact, durationMs, els) {
   const { tempVal, co2Val, aqiVal } = els
   const t0 = performance.now()
 
-  // Start state: real/local temp, 0 kg filtered, higher air index
   if (tempVal) {
     tempVal.textContent = `${impact.baselineTemp.toFixed(1)}°C`
     tempVal.classList.add('warning')
@@ -179,7 +187,7 @@ function animateLiveStats(impact, durationMs, els) {
     co2Val.classList.remove('drop')
   }
   if (aqiVal) {
-    aqiVal.textContent = `INDEX ${impact.airStart}`
+    aqiVal.textContent = `AQI ${impact.airStart}`
     aqiVal.classList.add('warning')
     aqiVal.classList.remove('drop')
   }
@@ -197,7 +205,7 @@ function animateLiveStats(impact, durationMs, els) {
 
       if (tempVal) tempVal.textContent = `${tempNow.toFixed(1)}°C`
       if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)} kg`
-      if (aqiVal) aqiVal.textContent = `INDEX ${airNow}`
+      if (aqiVal) aqiVal.textContent = `AQI ${airNow}`
 
       if (u < 1) {
         requestAnimationFrame(tick)
@@ -209,8 +217,20 @@ function animateLiveStats(impact, durationMs, els) {
   })
 }
 
+function statusWorking(impact) {
+  if (impact.liveTemp && impact.liveAqi) return 'Live temp + AQI · modeling…'
+  if (impact.liveTemp) return 'Live temp · modeling canopy…'
+  if (impact.liveAqi) return 'Live AQI · modeling canopy…'
+  return 'Local estimate · modeling…'
+}
+
+function statusLocked(impact) {
+  if (impact.hasGps) return 'Modeled estimate · local zone'
+  return 'Modeled estimate'
+}
+
 /**
- * @param {{ sizeScale: number }[]} treeMeta
+ * @param {{ sizeScale: number, treeType?: string }[]} treeMeta
  */
 export async function playAwakeningSequence(treeMeta) {
   if (sequenceRunning) return
@@ -225,10 +245,8 @@ export async function playAwakeningSequence(treeMeta) {
 
   startStatusPulse()
 
-  // Fetch GPS + Open-Meteo ASAP so the dashboard can open with real-ish numbers
   const placePromise = resolvePlaceContext()
 
-  // —— Beat 1: show dashboard with live starting values, then ease during growth ——
   window.setTimeout(async () => {
     const place = await placePromise
     const impact = computeImpactFromTrees(treeMeta, place)
@@ -238,9 +256,7 @@ export async function playAwakeningSequence(treeMeta) {
       dashboard.setAttribute('aria-hidden', 'false')
     }
     if (statusMsg) {
-      statusMsg.textContent = impact.liveTemp
-        ? 'Live local temp · forest working…'
-        : 'Local estimate · forest working…'
+      statusMsg.textContent = statusWorking(impact)
       statusMsg.style.color = '#c4ff00'
     }
     if (statusDot) {
@@ -248,19 +264,12 @@ export async function playAwakeningSequence(treeMeta) {
       statusDot.style.boxShadow = '0 0 10px #c4ff00'
     }
 
-    // Animate for ~6s so it tracks the slower grow window (dashboard ~2.2s → ~8.2s)
     await animateLiveStats(impact, 6000, { tempVal, co2Val, aqiVal })
 
-    // Recompute from the (possibly still-growing) treeMeta array — if extra
-    // trees were tapped down while the numbers above were ticking, the lock
-    // -in below picks them up instead of freezing on the ~2.2s snapshot.
     const finalImpact = computeImpactFromTrees(treeMeta, place)
 
-    // —— Beat 2: lock the final readout ——
     if (statusMsg) {
-      statusMsg.textContent = finalImpact.hasGps
-        ? 'Impact verified · local zone'
-        : 'Impact verified'
+      statusMsg.textContent = statusLocked(finalImpact)
       statusMsg.style.color = '#c4ff00'
     }
     if (statusDot) {
@@ -275,35 +284,28 @@ export async function playAwakeningSequence(treeMeta) {
       tempVal.classList.add('drop')
     }
     if (co2Val) {
-      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)} kg`
+      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)} kg / yr`
       co2Val.classList.remove('warning')
       co2Val.classList.add('drop')
     }
     if (aqiVal) {
       aqiVal.innerHTML =
-        `<span style="opacity:0.55;font-size:11px">${finalImpact.airStart} →</span> ${finalImpact.airEnd} · CLEARER`
+        `<span style="opacity:0.55;font-size:11px">${finalImpact.airStart} →</span> ${finalImpact.airEnd} · MODEL`
       aqiVal.classList.remove('warning')
       aqiVal.classList.add('drop')
     }
   }, 2200)
-
 }
 
 /**
- * Bumps the already-locked dashboard numbers up once extra trees (planted
- * from a second/third/etc. tap) finish growing. Safe to call any number of
- * times — it only rewrites text, never restarts the reveal animation, and
- * it no-ops if the initial reveal hasn't locked its numbers in yet (so it
- * can never race Beat 2 above).
- * @param {{ sizeScale: number }[]} allTreeMeta running total across every planting
+ * @param {{ sizeScale: number, treeType?: string }[]} allTreeMeta
  */
 export async function refreshImpactDisplay(allTreeMeta) {
   const tempVal = document.getElementById('temp-val')
   const co2Val = document.getElementById('co2-val')
   const aqiVal = document.getElementById('aqi-val')
+  const statusMsg = document.getElementById('status-message')
 
-  // Beat 2 adds the 'drop' class once its numbers are locked — that's our
-  // signal it's safe to overwrite them without fighting the tween above.
   if (!tempVal || !tempVal.classList.contains('drop')) return
 
   const place = await resolvePlaceContext()
@@ -311,9 +313,10 @@ export async function refreshImpactDisplay(allTreeMeta) {
 
   tempVal.innerHTML =
     `${impact.baselineTemp.toFixed(1)}°C <span style="font-size:14px">→</span> ${impact.finalTemp.toFixed(1)}°C`
-  if (co2Val) co2Val.textContent = `${impact.co2Kg.toFixed(1)} kg`
+  if (co2Val) co2Val.textContent = `${impact.co2Kg.toFixed(1)} kg / yr`
   if (aqiVal) {
     aqiVal.innerHTML =
-      `<span style="opacity:0.55;font-size:11px">${impact.airStart} →</span> ${impact.airEnd} · CLEARER`
+      `<span style="opacity:0.55;font-size:11px">${impact.airStart} →</span> ${impact.airEnd} · MODEL`
   }
+  if (statusMsg) statusMsg.textContent = statusLocked(impact)
 }

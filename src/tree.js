@@ -115,6 +115,8 @@ export const SPECIES_INFO = {
   spire: {
     id: 'spire',
     scientific: 'Casuarina equisetifolia',
+    /** Modeled mature annual CO₂ uptake (kg/year) — educational estimate */
+    co2KgYear: 12,
     traits: {
       leafSurface: 70,
       waxySurfaces: 55,
@@ -125,6 +127,7 @@ export const SPECIES_INFO = {
   fan: {
     id: 'fan',
     scientific: 'Pterocarpus indicus',
+    co2KgYear: 20,
     traits: {
       leafSurface: 92,
       waxySurfaces: 72,
@@ -135,6 +138,7 @@ export const SPECIES_INFO = {
   canopy: {
     id: 'canopy',
     scientific: 'Syzygium grande',
+    co2KgYear: 16,
     traits: {
       leafSurface: 86,
       waxySurfaces: 82,
@@ -145,6 +149,7 @@ export const SPECIES_INFO = {
   willow: {
     id: 'willow',
     scientific: 'Mesua ferrea',
+    co2KgYear: 14,
     traits: {
       leafSurface: 78,
       waxySurfaces: 68,
@@ -155,6 +160,7 @@ export const SPECIES_INFO = {
   under: {
     id: 'under',
     scientific: 'Acalypha siamensis',
+    co2KgYear: 3,
     traits: {
       leafSurface: 48,
       waxySurfaces: 60,
