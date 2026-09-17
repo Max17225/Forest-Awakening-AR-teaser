@@ -16,6 +16,7 @@ let panelEl = null
 let titleEl = null
 let barsEl = null
 let tabsEl = null
+let countsEl = null
 let canvas = null
 let renderer = null
 let scene = null
@@ -24,14 +25,38 @@ let currentGroup = null
 let currentType = SPECIES_ORDER[0]
 let rafId = 0
 let spinning = false
+/** @type {Record<string, number>} */
+let plantedCounts = Object.fromEntries(SPECIES_ORDER.map((id) => [id, 0]))
 
 function ensureDom() {
   panelEl = document.getElementById('species-panel')
   titleEl = document.getElementById('species-panel-title')
   barsEl = document.getElementById('species-trait-bars')
   tabsEl = document.getElementById('species-tabs')
+  countsEl = document.getElementById('species-planted-counts')
   canvas = document.getElementById('species-preview-canvas')
   return Boolean(panelEl && titleEl && barsEl && tabsEl && canvas)
+}
+
+function renderCounts() {
+  if (!countsEl) return
+  countsEl.innerHTML = SPECIES_ORDER.map((id) => {
+    const n = plantedCounts[id] || 0
+    const short = SPECIES_INFO[id].scientific.split(' ')[0]
+    return `<span class="species-count${n > 0 ? ' is-planted' : ''}"><em>${short}</em> ${n}</span>`
+  }).join('')
+}
+
+/**
+ * @param {{ treeType?: string }[]} treeMeta
+ */
+export function updatePlantedCounts(treeMeta) {
+  plantedCounts = Object.fromEntries(SPECIES_ORDER.map((id) => [id, 0]))
+  for (let i = 0; i < treeMeta.length; i++) {
+    const t = treeMeta[i].treeType || 'canopy'
+    if (plantedCounts[t] != null) plantedCounts[t] += 1
+  }
+  renderCounts()
 }
 
 function buildTabs() {
@@ -83,18 +108,20 @@ function clearPreviewTree() {
 }
 
 function mountPreviewTree(typeId) {
-  if (!scene) return
+  if (!scene || !camera) return
   clearPreviewTree()
 
   const isUnder = typeId === 'under'
+  // Smaller scale + farther camera so full silhouettes fit in the panel
   const created = isUnder
     ? createUndergrowth(scene, 0, 0, 0, {
-        sizeScale: 1.6,
+        sizeScale: 1.15,
         instantMature: true,
         rotationY: 0.35,
       })
     : createGrowingTree(scene, 0, 0, 0, {
-        sizeScale: typeId === 'fan' ? 0.95 : 1.05,
+        sizeScale:
+          typeId === 'spire' ? 0.55 : typeId === 'willow' ? 0.62 : 0.68,
         treeType: typeId,
         instantMature: true,
         skipFireflies: true,
@@ -102,10 +129,23 @@ function mountPreviewTree(typeId) {
       })
 
   currentGroup = created.group
-  // Panel trees should keep matrixAutoUpdate so we can spin them a little
   currentGroup.traverse((obj) => {
     obj.matrixAutoUpdate = true
   })
+
+  if (isUnder) {
+    camera.position.set(0, 1.6, 5.5)
+    camera.lookAt(0, 0.7, 0)
+  } else if (typeId === 'spire') {
+    camera.position.set(0, 3.8, 13.5)
+    camera.lookAt(0, 3.0, 0)
+  } else if (typeId === 'fan') {
+    camera.position.set(0, 2.8, 12.5)
+    camera.lookAt(0, 2.0, 0)
+  } else {
+    camera.position.set(0, 3.2, 12.8)
+    camera.lookAt(0, 2.4, 0)
+  }
 }
 
 function initPreviewRenderer() {
@@ -120,9 +160,9 @@ function initPreviewRenderer() {
   renderer.setClearColor(0x000000, 0)
 
   scene = new THREE.Scene()
-  camera = new THREE.PerspectiveCamera(32, 1, 0.1, 40)
-  camera.position.set(0, 3.4, 9.5)
-  camera.lookAt(0, 2.2, 0)
+  camera = new THREE.PerspectiveCamera(28, 1, 0.1, 60)
+  camera.position.set(0, 3.2, 12.8)
+  camera.lookAt(0, 2.4, 0)
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.65))
   const key = new THREE.DirectionalLight(0xffffff, 1.1)
@@ -178,10 +218,10 @@ export function openSpeciesPanel(typeId = currentType) {
   if (!ensureDom()) return
   initPreviewRenderer()
   buildTabs()
+  renderCounts()
   panelEl.classList.remove('hidden')
   panelEl.setAttribute('aria-hidden', 'false')
   selectSpecies(typeId)
-  // Layout then size canvas
   requestAnimationFrame(() => {
     resizePreview()
     if (renderer && scene && camera) renderer.render(scene, camera)

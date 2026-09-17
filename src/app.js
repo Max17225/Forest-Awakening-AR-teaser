@@ -20,6 +20,7 @@ import {
   initSpeciesPanel,
   showSpeciesInfoButton,
 } from './species-panel.js'
+import { initHowtoModal, showHowtoModal } from './howto-modal.js'
 
 // XR8.Threejs expects THREE on window (official 8th Wall placeground pattern)
 window.THREE = { ...THREE }
@@ -34,6 +35,9 @@ window.__FA_PLACE_CACHE__ = null
 /** Tap-to-plant stays off until START AR dismisses the splash */
 window.__FA_SPLASH_DISMISSED__ = false
 
+/** Planting stays off until the how-to modal is finished */
+window.__FA_HOWTO_DONE__ = false
+
 /** API: Open-Meteo current temperature (no API key). Docs: https://open-meteo.com/ */
 function fetchLiveTemperature(lat, lon) {
   const url =
@@ -46,6 +50,22 @@ function fetchLiveTemperature(lat, lon) {
     .then((data) => {
       const t = data?.current?.temperature_2m
       return typeof t === 'number' && Number.isFinite(t) ? t : null
+    })
+    .catch(() => null)
+}
+
+/** API: Open-Meteo air quality (US AQI). Docs: https://open-meteo.com/en/docs/air-quality-api */
+function fetchLiveAqi(lat, lon) {
+  const url =
+    `https://air-quality-api.open-meteo.com/v1/air-quality` +
+    `?latitude=${encodeURIComponent(lat)}` +
+    `&longitude=${encodeURIComponent(lon)}` +
+    `&current=us_aqi`
+  return fetch(url)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      const aqi = data?.current?.us_aqi
+      return typeof aqi === 'number' && Number.isFinite(aqi) ? aqi : null
     })
     .catch(() => null)
 }
@@ -71,16 +91,21 @@ function getGpsCoords() {
 async function prefetchPlaceContext() {
   const coords = await getGpsCoords()
   if (coords) {
-    const live = await fetchLiveTemperature(coords.lat, coords.lon)
+    const [liveTemp, liveAqi] = await Promise.all([
+      fetchLiveTemperature(coords.lat, coords.lon),
+      fetchLiveAqi(coords.lat, coords.lon),
+    ])
     window.__FA_PLACE_CACHE__ = {
       coords,
-      liveTemp: live,
+      liveTemp,
+      liveAqi,
       fetchedAt: Date.now(),
     }
   } else {
     window.__FA_PLACE_CACHE__ = {
       coords: null,
       liveTemp: null,
+      liveAqi: null,
       fetchedAt: Date.now(),
     }
   }
@@ -189,20 +214,15 @@ const revealSplashAfterLoad = () => {
 
 const dismissSplash = () => {
   const splashScreen = document.getElementById('splash-screen')
-  const instruction = document.getElementById('instruction')
   if (splashScreen) {
     splashScreen.style.opacity = '0'
     splashScreen.style.pointerEvents = 'none'
     window.setTimeout(() => {
       splashScreen.classList.add('hidden')
-      if (instruction) instruction.classList.remove('hidden')
-      showSpeciesInfoButton()
+      showHowtoModal()
     }, 400)
-  } else if (instruction) {
-    instruction.classList.remove('hidden')
-    showSpeciesInfoButton()
   } else {
-    showSpeciesInfoButton()
+    showHowtoModal()
   }
 }
 
@@ -212,6 +232,13 @@ const startExperience = () => {
   if (experienceStarted || !window.XRExtras || !window.XR8) return
   experienceStarted = true
   initSpeciesPanel()
+  initHowtoModal({
+    onDone: () => {
+      const instruction = document.getElementById('instruction')
+      if (instruction) instruction.classList.remove('hidden')
+      showSpeciesInfoButton()
+    },
+  })
   XRExtras.Loading.showLoading({ onxrloaded: onXrLoaded })
 }
 
@@ -219,10 +246,12 @@ if (!isMobileDevice()) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initSpeciesPanel()
+      initHowtoModal()
       setupDesktopSplash()
     })
   } else {
     initSpeciesPanel()
+    initHowtoModal()
     setupDesktopSplash()
   }
   // Desktop can open the species compare panel without AR

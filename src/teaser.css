@@ -236,7 +236,7 @@ body {
 
 /*
   Impact dashboard — slides in after the grove starts growing.
-  Shows theatrical temp / CO₂ / air-quality numbers (not real sensors).
+  Temp + AQI start from Open-Meteo when available; CO₂ / improvements are species-weighted models.
 */
 .dashboard {
   position: absolute;
@@ -521,4 +521,114 @@ body {
   #species-preview-canvas {
     min-height: 160px;
   }
+}
+
+/* --- How-to modal --- */
+.howto-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.howto-modal.hidden {
+  display: none;
+}
+
+.howto-card {
+  text-align: left;
+  max-width: 400px;
+}
+
+.howto-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  font-weight: 900;
+  color: #c4ff00;
+  text-align: center;
+}
+
+.howto-list {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  color: #d0d5d8;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.howto-list li {
+  margin-bottom: 8px;
+}
+
+.howto-note,
+.howto-body {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #a0a0a0;
+}
+
+.howto-species {
+  margin: 0 0 18px;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #d0d5d8;
+}
+
+.howto-species em {
+  color: #c4ff00;
+  font-style: italic;
+}
+
+.howto-btn {
+  display: block;
+  width: 100%;
+  background-color: #c4ff00;
+  color: #000;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.howto-btn:active {
+  transform: scale(0.98);
+}
+
+.species-planted-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.species-count {
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(208, 213, 216, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.species-count em {
+  font-style: italic;
+  margin-right: 4px;
+}
+
+.species-count.is-planted {
+  border-color: rgba(196, 255, 0, 0.45);
+  color: #c4ff00;
+  background: rgba(196, 255, 0, 0.1);
 }
