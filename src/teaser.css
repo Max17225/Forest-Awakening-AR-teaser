@@ -362,6 +362,23 @@ body {
   color: var(--lime);
 }
 
+/* AQI: hot “current” → cool “improved” (inline tone during animation) */
+#aqi-val.warning {
+  color: #ff5c30;
+  text-shadow: 0 0 14px rgba(255, 80, 40, 0.55);
+}
+
+#aqi-val.drop {
+  color: var(--lime);
+  text-shadow: 0 0 12px rgba(196, 255, 0, 0.35);
+}
+
+#aqi-val.drop .aqi-from,
+#aqi-val.drop .aqi-arrow {
+  color: rgba(255, 120, 70, 0.75);
+  text-shadow: none;
+}
+
 
 /* --- Species compare panel (3D left + trait bars right) --- */
 .species-info-btn {
@@ -531,14 +548,19 @@ body {
 }
 
 .species-tabs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
 .species-tab {
-  flex: 1 1 auto;
-  min-width: calc(50% - 6px);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(196, 255, 0, 0.28);
   background: rgba(196, 255, 0, 0.06);
   color: rgba(232, 255, 176, 0.85);
@@ -557,6 +579,10 @@ body {
   font-size: 12px;
   color: #c4ff00;
   font-weight: 800;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .species-tab span {
@@ -566,6 +592,10 @@ body {
   font-style: italic;
   opacity: 0.7;
   font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .species-tab.is-active {
