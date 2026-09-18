@@ -178,10 +178,10 @@ export const SPECIES_INFO = {
 export const SPECIES_ORDER = ['spire', 'fan', 'canopy', 'willow', 'under']
 
 export const TRAIT_LABELS = [
-  { key: 'leafSurface', label: 'Leaf surface areas' },
-  { key: 'waxySurfaces', label: 'Waxy Surfaces' },
-  { key: 'hairyTextures', label: 'Hairy Textures' },
-  { key: 'leafDensity', label: 'Leaf Density' },
+  { key: 'leafSurface', label: 'Leaf surface area' },
+  { key: 'waxySurfaces', label: 'Waxy surfaces' },
+  { key: 'hairyTextures', label: 'Hairy textures' },
+  { key: 'leafDensity', label: 'Leaf density' },
 ]
 
 /**

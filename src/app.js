@@ -22,6 +22,7 @@ import {
 } from './species-panel.js'
 import { initHowtoModal, showHowtoModal } from './howto-modal.js'
 import { showLocalBaseline } from './sequence.js'
+import { aqiBand } from './aqi.js'
 
 // XR8.Threejs expects THREE on window (official 8th Wall placeground pattern)
 window.THREE = { ...THREE }
@@ -204,12 +205,52 @@ const isMobileDevice = () =>
     navigator.userAgent
   )
 
+function paintSplashAqi() {
+  const meta = document.getElementById('splash-aqi-meta')
+  const num = document.getElementById('splash-aqi-num')
+  const status = document.getElementById('splash-aqi-status')
+  if (!meta || !num || !status) return
+
+  const cache = window.__FA_PLACE_CACHE__ || {}
+  const place =
+    cache.placeLabel ||
+    (cache.coords
+      ? `${cache.coords.lat.toFixed(2)}°, ${cache.coords.lon.toFixed(2)}°`
+      : null)
+  const aqi = cache.liveAqi
+
+  if (typeof aqi === 'number' && Number.isFinite(aqi)) {
+    const band = aqiBand(aqi)
+    const area = (place || 'Your area').split(',')[0].trim().toUpperCase()
+    meta.textContent = `${area} · LIVE AQI`
+    num.textContent = String(Math.round(aqi))
+    num.style.color = `rgb(${band.text.join(',')})`
+    status.textContent = band.splashLine
+    return
+  }
+
+  if (cache.coords) {
+    meta.textContent = `${(place || 'Your area').split(',')[0].trim().toUpperCase()} · AQI`
+    num.textContent = '—'
+    num.style.color = ''
+    status.textContent = 'Location on, AQI unavailable right now.'
+    return
+  }
+
+  meta.textContent = 'LOCATION OFF · AQI'
+  num.textContent = '—'
+  num.style.color = ''
+  status.textContent = 'Turn on location to read the air around you.'
+}
+
 const setupDesktopSplash = () => {
   const splashScreen = document.getElementById('splash-screen')
   const startBtn = document.getElementById('start-ar-button')
-  const disclaimer = document.querySelector('.splash-disclaimer')
-  const title = document.querySelector('.splash-title')
-  const text = document.querySelector('.splash-text')
+  const aqiBlock = document.getElementById('splash-aqi-block')
+  const splashIntro = document.getElementById('splash-intro')
+  const splashHeader = document.querySelector('.splash-header')
+  const desktopCopy = document.getElementById('desktop-splash-copy')
+  const footer = document.querySelector('.splash-footer')
   const qrContainer = document.getElementById('desktop-qr-container')
   const qrImage = document.getElementById('desktop-qr-code')
 
@@ -220,13 +261,11 @@ const setupDesktopSplash = () => {
   }
 
   if (startBtn) startBtn.style.display = 'none'
-  if (disclaimer) disclaimer.style.display = 'none'
-
-  if (title) title.textContent = 'Desktop Detected'
-  if (text) {
-    text.innerHTML =
-      'This WebAR experience requires a mobile device camera.<br/><br/>Please scan the QR code below to enter the forest.'
-  }
+  if (aqiBlock) aqiBlock.style.display = 'none'
+  if (splashIntro) splashIntro.style.display = 'none'
+  if (splashHeader) splashHeader.style.display = 'none'
+  if (footer) footer.style.display = 'none'
+  if (desktopCopy) desktopCopy.classList.remove('hidden')
 
   if (qrImage) {
     qrImage.src =
@@ -254,6 +293,7 @@ const revealSplashAfterLoad = () => {
 
   startBtn.disabled = false
   startBtn.textContent = 'START AR'
+  paintSplashAqi()
 
   if (startBtn.dataset.armed === 'true') return
   startBtn.dataset.armed = 'true'

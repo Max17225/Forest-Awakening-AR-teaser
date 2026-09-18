@@ -1,6 +1,5 @@
 /**
- * Species compare panel — left: live 3D model, right: trait bars.
- * Scientific names only. Trait values are educational estimates.
+ * More info panel — species title, 3D + trait bars, then planted counts + tabs.
  */
 
 import * as THREE from 'three'
@@ -11,12 +10,13 @@ import {
   SPECIES_ORDER,
   TRAIT_LABELS,
 } from './tree.js'
+import { AQI_BANDS } from './aqi.js'
 
 let panelEl = null
 let titleEl = null
 let barsEl = null
 let tabsEl = null
-let countsEl = null
+let legendEl = null
 let canvas = null
 let renderer = null
 let scene = null
@@ -33,18 +33,32 @@ function ensureDom() {
   titleEl = document.getElementById('species-panel-title')
   barsEl = document.getElementById('species-trait-bars')
   tabsEl = document.getElementById('species-tabs')
-  countsEl = document.getElementById('species-planted-counts')
+  legendEl = document.getElementById('aqi-legend')
   canvas = document.getElementById('species-preview-canvas')
   return Boolean(panelEl && titleEl && barsEl && tabsEl && canvas)
 }
 
+function renderAqiLegend() {
+  if (!legendEl) return
+  legendEl.innerHTML = AQI_BANDS.map(
+    (band) => `
+      <div class="aqi-legend-row">
+        <span class="aqi-legend-swatch" style="background:${band.swatch}"></span>
+        <span class="aqi-legend-label">${band.label}</span>
+        <span class="aqi-legend-range">${band.range}</span>
+      </div>
+    `
+  ).join('')
+}
+
 function renderCounts() {
-  if (!countsEl) return
-  countsEl.innerHTML = SPECIES_ORDER.map((id) => {
-    const n = plantedCounts[id] || 0
-    const name = SPECIES_INFO[id].localName
-    return `<span class="species-count${n > 0 ? ' is-planted' : ''}"><em>${name}</em> ${n}</span>`
-  }).join('')
+  if (!tabsEl) return
+  tabsEl.querySelectorAll('.species-tab').forEach((btn) => {
+    const n = plantedCounts[btn.dataset.species] || 0
+    const countEl = btn.querySelector('.species-tab-count')
+    if (countEl) countEl.textContent = String(n)
+    btn.classList.toggle('has-planted', n > 0)
+  })
 }
 
 /**
@@ -68,7 +82,9 @@ function buildTabs() {
     btn.type = 'button'
     btn.className = 'species-tab'
     btn.dataset.species = id
-    btn.innerHTML = `<strong>${info.localName}</strong><span>${info.scientific}</span>`
+    btn.innerHTML =
+      `<strong>${info.localName}</strong>` +
+      `<span class="species-tab-count">0</span>`
     btn.addEventListener('click', (e) => {
       e.stopPropagation()
       selectSpecies(id)
@@ -112,7 +128,6 @@ function mountPreviewTree(typeId) {
   clearPreviewTree()
 
   const isUnder = typeId === 'under'
-  // Smaller scale + farther camera so full silhouettes fit in the panel
   const created = isUnder
     ? createUndergrowth(scene, 0, 0, 0, {
         sizeScale: 1.15,
@@ -221,6 +236,7 @@ export function openSpeciesPanel(typeId = currentType) {
   initPreviewRenderer()
   buildTabs()
   renderCounts()
+  renderAqiLegend()
   panelEl.classList.remove('hidden')
   panelEl.setAttribute('aria-hidden', 'false')
   selectSpecies(typeId)
@@ -244,9 +260,12 @@ export function showSpeciesInfoButton() {
   if (btn) btn.classList.remove('hidden')
 }
 
-/** Wire open / close / outside-tap once after DOM is ready */
 export function initSpeciesPanel() {
   if (!ensureDom()) return
+
+  buildTabs()
+  renderCounts()
+  renderAqiLegend()
 
   const openBtn = document.getElementById('species-info-btn')
   const closeBtn = document.getElementById('species-panel-close')
@@ -269,7 +288,6 @@ export function initSpeciesPanel() {
   })
   if (card) {
     card.addEventListener('click', (e) => e.stopPropagation())
-    // Prevent AR plant taps while interacting with the panel
     ;['touchstart', 'touchend', 'pointerdown'].forEach((evt) => {
       card.addEventListener(evt, (e) => e.stopPropagation())
     })

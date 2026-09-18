@@ -10,6 +10,7 @@
  */
 
 import { SPECIES_INFO } from './tree.js'
+import { aqiBand } from './aqi.js'
 
 let sequenceRunning = false
 /** True once local baseline (temp + AQI) has been shown */
@@ -67,30 +68,9 @@ function lerpRgb(a, b, t) {
   ]
 }
 
-/**
- * US AQI bands → continuous red/orange/green tone.
- * Good ≤50, Moderate ≤100, Unhealthy-sensitive+ → poor.
- */
+/** US AQI bands → the standard EPA band colour for that number. */
 function aqiSeverityRgb(aqi) {
-  const v = Number(aqi)
-  if (!Number.isFinite(v) || v <= 50) {
-    if (v <= 30) return SEVERITY.good.rgb
-    const t = (v - 30) / 20
-    return lerpRgb(SEVERITY.good.rgb, SEVERITY.moderate.rgb, t)
-  }
-  if (v <= 100) {
-    const t = (v - 50) / 50
-    return lerpRgb(SEVERITY.moderate.rgb, SEVERITY.poor.rgb, t * 0.55)
-  }
-  if (v <= 150) {
-    const t = (v - 100) / 50
-    return lerpRgb(
-      lerpRgb(SEVERITY.moderate.rgb, SEVERITY.poor.rgb, 0.55),
-      SEVERITY.poor.rgb,
-      t
-    )
-  }
-  return SEVERITY.poor.rgb
+  return aqiBand(aqi).text
 }
 
 /**
@@ -111,12 +91,9 @@ function tempSeverityRgb(tempC) {
   return SEVERITY.poor.rgb
 }
 
+/** Glow matches the value's own colour so bands stay readable at a glance */
 function severityGlow(rgb) {
-  // Prefer red glow when hot/poor, lime when good
-  const redness = rgb[0] - rgb[1]
-  if (redness > 40) return SEVERITY.poor.glow
-  if (rgb[1] > 200 && rgb[0] < 210) return SEVERITY.good.glow
-  return SEVERITY.moderate.glow
+  return `0 0 12px ${rgbCss(rgb, 0.45)}`
 }
 
 function applyTone(el, rgb) {
@@ -259,25 +236,15 @@ export function computeImpactFromTrees(treeMeta, place) {
   }
 }
 
-function updateAqiSublabel(impact) {
-  const el = document.getElementById('aqi-sublabel')
+/** Headline of the dashboard: where these readings come from. */
+function updatePlaceLabel(impact) {
+  const el = document.getElementById('place-label')
   if (!el) return
-
   if (!impact.hasGps) {
-    el.textContent = 'Turn on location to read your area’s AQI'
-    el.classList.add('is-warn')
+    el.textContent = 'Location off'
     return
   }
-
-  const area = impact.placeLabel || 'Your area'
-  if (impact.liveAqi && impact.aqiSource) {
-    el.textContent = `${area} · via ${impact.aqiSource}`
-    el.classList.remove('is-warn')
-    return
-  }
-
-  el.textContent = `${area} · location on, AQI unavailable`
-  el.classList.remove('is-warn')
+  el.textContent = impact.placeLabel || 'Your area'
 }
 
 function startStatusPulse() {
@@ -313,10 +280,7 @@ function showDashboard() {
 function setStatus(text) {
   const statusMsg = document.getElementById('status-message')
   const statusDot = document.getElementById('status-dot')
-  if (statusMsg) {
-    statusMsg.textContent = text
-    statusMsg.style.color = '#c4ff00'
-  }
+  if (statusMsg) statusMsg.textContent = text
   if (statusDot) {
     statusDot.style.background = '#c4ff00'
     statusDot.style.boxShadow = '0 0 10px #c4ff00'
@@ -377,16 +341,14 @@ function paintLockedImpact(impact, els) {
 }
 
 function statusLocal(impact) {
-  if (impact.liveTemp && impact.liveAqi) return 'Local temp & AQI'
-  if (impact.liveTemp) return 'Local temp'
-  if (impact.liveAqi) return 'Local AQI'
-  return 'Local readings'
+  if (!impact.hasGps) return 'Turn on location for local readings'
+  if (impact.liveTemp && impact.liveAqi) return 'Live temp & AQI · Open-Meteo'
+  if (impact.liveTemp) return 'Live temp · Open-Meteo'
+  if (impact.liveAqi) return 'Live AQI · Open-Meteo'
+  return 'Estimated local readings'
 }
 
-function statusWorking(impact) {
-  if (impact.liveTemp && impact.liveAqi) return 'Trees working & live local air'
-  if (impact.liveTemp) return 'Trees working & live temp'
-  if (impact.liveAqi) return 'Trees working & live AQI'
+function statusWorking() {
   return 'Trees working…'
 }
 
@@ -419,7 +381,7 @@ export async function showLocalBaseline() {
     co2Val.classList.remove('drop')
   }
   setStatus(statusLocal(impact))
-  updateAqiSublabel(impact)
+  updatePlaceLabel(impact)
   paintLocalReadings(impact, { tempVal, aqiVal })
   baselineShown = true
 }
@@ -505,7 +467,7 @@ export async function playAwakeningSequence(treeMeta) {
 
     showDashboard()
     setCo2Deferred(true)
-    updateAqiSublabel(impact)
+    updatePlaceLabel(impact)
 
     // Beat 1: local severity first (skip long hold if already shown pre-plant)
     if (!baselineShown) {
@@ -519,14 +481,14 @@ export async function playAwakeningSequence(treeMeta) {
     }
 
     // Beat 2: trees improve temp + AQI (colors follow severity of the live value)
-    setStatus(statusWorking(impact))
+    setStatus(statusWorking())
     await animateImprovement(impact, 5500, { tempVal, aqiVal })
 
     const finalImpact = computeImpactFromTrees(treeMeta, place)
 
     // Beat 3: only now reveal CO₂
     setStatus(statusLocked(finalImpact))
-    updateAqiSublabel(finalImpact)
+    updatePlaceLabel(finalImpact)
     paintLockedImpact(finalImpact, { tempVal, aqiVal, co2Val: null })
     await revealCo2(finalImpact, co2Val)
     paintLockedImpact(finalImpact, { tempVal, co2Val, aqiVal })
@@ -555,7 +517,7 @@ export async function refreshImpactDisplay(allTreeMeta) {
 
   paintLockedImpact(impact, { tempVal, co2Val, aqiVal })
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
-  updateAqiSublabel(impact)
+  updatePlaceLabel(impact)
   impactRevealDone = true
   baselineShown = true
 }

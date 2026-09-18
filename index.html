@@ -20,21 +20,12 @@
       3. #ui-layer → HUD stickers (logo, stats, title)
          pointer-events:none so taps hit the AR canvas underneath
 
-      Flow: splash → START AR → 8th Wall load → tap plants grove
-      (~8–9s) → live-ish stats. Far Out logo stays top-right.
-
+      Flow: splash → START AR → how-to → tap plants grove
       GPS / weather are fetched on the loading screen (app.js), not
       mid-AR, so the location prompt cannot break world tracking.
       ============================================================
     -->
 
-    <!--
-      AR ENGINE (8th Wall distributed binary)
-      Imagine: this is the "brain" that reads the phone camera and
-      figures out where the phone is in the room (SLAM).
-      data-preload-chunks="slam" = download world-tracking code first
-      so trees can stay planted when you walk around.
-    -->
     <script
       src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js"
       async
@@ -42,19 +33,16 @@
       data-preload-chunks="slam"
     ></script>
 
-    <!-- AR helpers: loading screen, full-window canvas, error UI -->
     <script
       src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"
       crossorigin="anonymous"
     ></script>
 
-    <!-- Shows a friendly page if this phone/browser can't run WebAR -->
     <script
       src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js"
       crossorigin="anonymous"
     ></script>
 
-    <!-- Soft motion for tree growth + HUD fades (not AR) -->
     <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -76,34 +64,40 @@
       "
     />
 
+    <!-- Screen 1: Canopy Index → by logo → location / AQI / severity → preview → Start AR -->
     <div id="splash-screen" class="hidden">
-      <div class="splash-card">
-        <div class="splash-logo-container">
-          <span class="splash-by">By</span>
-          <img
-            class="splash-logo-img"
-            src="/assets/logo.png"
-            alt="Far Out"
-            onerror="
-              this.onerror = null;
-              this.src = '/assets/logo.svg';
-            "
-          />
+      <div class="splash-shell">
+        <header class="splash-header">
+          <h1 class="splash-title" id="splash-title">Canopy Index</h1>
+          <div class="splash-brand-row">
+            <span class="splash-by">by</span>
+            <img
+              class="splash-logo-img"
+              src="/assets/logo.png"
+              alt="Far Out"
+              onerror="
+                this.onerror = null;
+                this.src = '/assets/logo.svg';
+              "
+            />
+          </div>
+        </header>
+
+        <!-- Location + AQI float mid-screen as atmosphere -->
+        <div class="splash-aqi-block" id="splash-aqi-block">
+          <p class="splash-aqi-meta" id="splash-aqi-meta">WAITING · AQI</p>
+          <p class="splash-aqi-num" id="splash-aqi-num">—</p>
+          <p class="splash-aqi-status" id="splash-aqi-status">
+            Checking the air around you…
+          </p>
         </div>
 
-        <h1 class="splash-title">Canopy Index</h1>
-
-        <p class="splash-text">
-          Tap to plant forests around you and watch your
-          <strong>Canopy Index</strong> rise. Each forest you spawn improves the
-          score, estimated from your real-world location. How green can you make
-          your surroundings?
-        </p>
-
-        <div class="splash-disclaimer">
-          <strong>Development Preview</strong><br />
-          This experience is currently in early development and may contain
-          visual bugs.
+        <div id="desktop-splash-copy" class="desktop-splash-copy hidden">
+          <h1 class="splash-title">Desktop Detected</h1>
+          <p class="splash-text">
+            This WebAR experience requires a mobile device camera.<br /><br />
+            Please scan the QR code below to enter the forest.
+          </p>
         </div>
 
         <div id="desktop-qr-container" class="hidden">
@@ -119,33 +113,28 @@
               height: 140px;
             "
           />
-          <p
-            style="
-              color: #c4ff00;
-              font-size: 14px;
-              font-weight: 800;
-              margin-top: 12px;
-              margin-bottom: 0;
-            "
-          >
-            Scan to open on mobile
-          </p>
+          <p class="splash-qr-hint">Scan to open on mobile</p>
         </div>
 
-        <button id="start-ar-button" type="button" disabled>
-          LOADING AR...
-        </button>
+        <div class="splash-cta">
+          <div id="splash-intro" class="splash-intro">
+            <div class="splash-disclaimer">
+              <strong>Development Preview</strong><br />
+              This experience is currently in early development and may contain
+              visual bugs.
+            </div>
+          </div>
+          <button id="start-ar-button" type="button" disabled>
+            Loading…
+          </button>
+          <p class="splash-footer">Data via Open-Meteo</p>
+        </div>
       </div>
     </div>
 
-    <!--
-      AR VIEWPORT
-      XR8 paints the real camera feed + Three.js trees into this canvas.
-      Taps land here → scene.js plants the grove on the SLAM floor.
-    -->
     <canvas id="camerafeed"></canvas>
 
-    <!-- How-to (after START AR, before planting) -->
+    <!-- How-to sheets — old copy in the new bottom-sheet layout -->
     <div
       id="howto-modal"
       class="howto-modal hidden"
@@ -153,18 +142,43 @@
       aria-modal="true"
       aria-hidden="true"
     >
-      <div class="howto-card splash-card">
+      <div class="howto-card">
+        <!-- 1 / 2 — How to plant -->
         <div id="howto-page-1" data-howto-page="1">
+          <p class="howto-kicker">1 / 2 — How to plant</p>
           <h2 class="howto-title">How to plant</h2>
-          <ol class="howto-list">
-            <li>Point your phone at the ground</li>
-            <li>Tap once to grow a Malaysia tree grove</li>
-            <li>Watch temp, CO₂, and AQI update on the dashboard</li>
-            <li>Tap again to plant more clusters</li>
+          <ol class="howto-steps">
+            <li>
+              <span class="howto-step-num">1</span>
+              <div>
+                <strong>Point your phone at the ground</strong>
+              </div>
+            </li>
+            <li>
+              <span class="howto-step-num">2</span>
+              <div>
+                <strong>Tap once to grow a Malaysia tree grove</strong>
+              </div>
+            </li>
+            <li>
+              <span class="howto-step-num">3</span>
+              <div>
+                <strong>Watch temp, CO₂, and AQI update on the dashboard</strong>
+              </div>
+            </li>
+            <li>
+              <span class="howto-step-num">4</span>
+              <div>
+                <strong>Tap again to plant more clusters</strong>
+              </div>
+            </li>
           </ol>
           <button type="button" id="howto-next" class="howto-btn">Next</button>
         </div>
+
+        <!-- 2 / 2 — How it works -->
         <div id="howto-page-2" data-howto-page="2" class="hidden">
+          <p class="howto-kicker">2 / 2 — How it works</p>
           <h2 class="howto-title">How it works</h2>
           <p class="howto-body">
             Leaf surface area, waxy surfaces, hairy textures, and leaf density
@@ -177,11 +191,26 @@
             factors that help reduce haze particles.
           </p>
           <ul class="howto-species">
-            <li><strong>Rhu</strong> — <em>Casuarina equisetifolia</em></li>
-            <li><strong>Angsana</strong> — <em>Pterocarpus indicus</em></li>
-            <li><strong>Kelat jambu</strong> — <em>Syzygium grande</em></li>
-            <li><strong>Penaga lilin</strong> — <em>Mesua ferrea</em></li>
-            <li><strong>Teh-tehan</strong> — <em>Acalypha siamensis</em></li>
+            <li>
+              <strong>Rhu</strong>
+              <em>Casuarina equisetifolia</em>
+            </li>
+            <li>
+              <strong>Angsana</strong>
+              <em>Pterocarpus indicus</em>
+            </li>
+            <li>
+              <strong>Kelat jambu</strong>
+              <em>Syzygium grande</em>
+            </li>
+            <li>
+              <strong>Penaga lilin</strong>
+              <em>Mesua ferrea</em>
+            </li>
+            <li>
+              <strong>Teh-tehan</strong>
+              <em>Acalypha siamensis</em>
+            </li>
           </ul>
           <button type="button" id="howto-done" class="howto-btn">
             Got it — plant trees
@@ -190,23 +219,26 @@
       </div>
     </div>
 
-    <!-- Species compare: opens after how-to -->
     <button
       type="button"
       id="species-info-btn"
       class="species-info-btn hidden"
-      aria-label="Tree species traits"
+      aria-label="More info"
     >
-      ⓘ Trees
+      ⓘ More info
     </button>
 
+    <!--
+      More info layout:
+      MORE INFO → TREES → buttons → trait descriptions → AQI reference
+    -->
     <div
       id="species-panel"
       class="species-panel hidden"
       role="dialog"
       aria-modal="true"
       aria-hidden="true"
-      aria-labelledby="species-panel-title"
+      aria-labelledby="species-panel-heading"
     >
       <div class="species-panel-card">
         <button
@@ -217,44 +249,55 @@
         >
           ×
         </button>
-        <h2 id="species-panel-title" class="species-panel-title">
-          Rhu <span class="species-sci">Casuarina equisetifolia</span>
-        </h2>
 
-        <div class="species-panel-body">
-          <div class="species-preview-wrap">
-            <canvas id="species-preview-canvas" width="200" height="240"></canvas>
+        <h2 id="species-panel-heading" class="info-heading">More info</h2>
+
+        <section class="info-section" aria-labelledby="trees-section-title">
+          <h3 id="trees-section-title" class="info-section-title">Trees</h3>
+          <div id="species-tabs" class="species-tabs" role="tablist"></div>
+        </section>
+
+        <section class="info-section" aria-labelledby="species-panel-title">
+          <h4 id="species-panel-title" class="species-panel-title">
+            Rhu <span class="species-sci">Casuarina equisetifolia</span>
+          </h4>
+
+          <div class="species-panel-body">
+            <div class="species-preview-wrap">
+              <canvas
+                id="species-preview-canvas"
+                width="200"
+                height="240"
+              ></canvas>
+            </div>
+            <div id="species-trait-bars" class="species-trait-bars"></div>
           </div>
-          <div id="species-trait-bars" class="species-trait-bars"></div>
-        </div>
 
-        <p class="species-panel-hint">
-          Bars compare relative leaf traits that help clean air (higher % ≈
-          stronger for that trait). These are educational estimates &amp; not
-          lab readings.
-        </p>
+          <p class="species-panel-hint">
+            Bars compare relative leaf traits that help clean air (higher % ≈
+            stronger for that trait). These are educational estimates &amp; not
+            lab readings.
+          </p>
+        </section>
 
-        <div id="species-planted-counts" class="species-planted-counts"></div>
-        <div id="species-tabs" class="species-tabs" role="tablist"></div>
+        <section class="info-section" aria-labelledby="aqi-ref-title">
+          <h3 id="aqi-ref-title" class="info-section-title">
+            Air quality index
+          </h3>
+          <p class="info-section-kicker">Reference of colours / health levels</p>
+          <div id="aqi-legend" class="aqi-legend"></div>
+        </section>
       </div>
     </div>
 
-    <!--
-      HUD OVERLAY (pointer-events: none so taps fall through to AR)
-    -->
     <div id="ui-layer" aria-live="polite">
-
-      <!--
-        Environmental HUD:
-        - LOCAL TEMP / AQI first (severity colors); CO₂ after trees improve
-        - Tap hint sits under the dashboard so they don’t overlap
-      -->
       <div class="hud-top" id="hud-top">
         <div class="dashboard" id="dashboard" aria-hidden="true">
-          <div class="status-text">
+          <div class="dash-place">
             <span class="status-dot" id="status-dot"></span>
-            <span id="status-message">Awaiting deployment</span>
+            <span class="dash-place-name" id="place-label">Locating…</span>
           </div>
+          <div class="dash-status" id="status-message">Awaiting deployment</div>
 
           <div class="stat-row">
             <div class="stat-label-block">
@@ -266,9 +309,6 @@
           <div class="stat-row">
             <div class="stat-label-block">
               <span class="stat-label">AIR AQI</span>
-              <span class="stat-sublabel" id="aqi-sublabel"
-                >Turn on location to read your area’s AQI</span
-              >
             </div>
             <span class="stat-value warning" id="aqi-val">—</span>
           </div>
@@ -284,12 +324,11 @@
             <span class="stat-value warning" id="co2-val">—</span>
           </div>
         </div>
-
-        <p class="instruction hidden" id="instruction">
-          Tap to awaken the forest
-        </p>
       </div>
 
+      <p class="instruction hidden" id="instruction">
+        Tap to awaken the forest
+      </p>
     </div>
 
     <script type="module" src="/src/app.js"></script>
