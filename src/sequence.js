@@ -42,6 +42,40 @@ function easeOutCubic(t) {
   return 1 - (1 - t) ** 3
 }
 
+/** Warm “current AQI” → cool “improved” for the dashboard beat */
+const AQI_COLOR_START = [255, 92, 48] // hot orange-red
+const AQI_COLOR_END = [196, 255, 0] // brand lime
+
+function lerpChannel(a, b, t) {
+  return Math.round(a + (b - a) * t)
+}
+
+function aqiColorAt(t) {
+  const e = Math.min(1, Math.max(0, t))
+  const r = lerpChannel(AQI_COLOR_START[0], AQI_COLOR_END[0], e)
+  const g = lerpChannel(AQI_COLOR_START[1], AQI_COLOR_END[1], e)
+  const b = lerpChannel(AQI_COLOR_START[2], AQI_COLOR_END[2], e)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+function setAqiTone(el, progress) {
+  if (!el) return
+  el.style.color = aqiColorAt(progress)
+  if (progress < 0.15) {
+    el.style.textShadow = '0 0 14px rgba(255, 80, 40, 0.55)'
+  } else if (progress > 0.85) {
+    el.style.textShadow = '0 0 12px rgba(196, 255, 0, 0.45)'
+  } else {
+    el.style.textShadow = 'none'
+  }
+}
+
+function clearAqiTone(el) {
+  if (!el) return
+  el.style.color = ''
+  el.style.textShadow = ''
+}
+
 function diminishingReturns(raw, cap) {
   return cap * (1 - Math.exp(-raw / cap))
 }
@@ -218,6 +252,7 @@ function animateLiveStats(impact, durationMs, els) {
     aqiVal.textContent = `${impact.airStart}`
     aqiVal.classList.add('warning')
     aqiVal.classList.remove('drop')
+    setAqiTone(aqiVal, 0)
   }
 
   return new Promise((resolve) => {
@@ -233,7 +268,10 @@ function animateLiveStats(impact, durationMs, els) {
 
       if (tempVal) tempVal.textContent = `${tempNow.toFixed(1)}°C`
       if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)} kg/year`
-      if (aqiVal) aqiVal.textContent = `${airNow}`
+      if (aqiVal) {
+        aqiVal.textContent = `${airNow}`
+        setAqiTone(aqiVal, e)
+      }
 
       if (u < 1) {
         requestAnimationFrame(tick)
@@ -323,6 +361,7 @@ export async function playAwakeningSequence(treeMeta) {
         `<span class="aqi-from">${finalImpact.airStart}</span><span class="aqi-arrow">→</span>${finalImpact.airEnd}`
       aqiVal.classList.remove('warning')
       aqiVal.classList.add('drop')
+      clearAqiTone(aqiVal)
     }
 
     impactRevealDone = true
@@ -362,6 +401,7 @@ export async function refreshImpactDisplay(allTreeMeta) {
       `<span class="aqi-from">${impact.airStart}</span><span class="aqi-arrow">→</span>${impact.airEnd}`
     aqiVal.classList.remove('warning')
     aqiVal.classList.add('drop')
+    clearAqiTone(aqiVal)
   }
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
   updateAqiSublabel(impact)
