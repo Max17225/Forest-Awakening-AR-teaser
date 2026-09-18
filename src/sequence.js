@@ -2,9 +2,9 @@
  * sequence.js — HUD puppeteer while / after the forest grows
  *
  * On-screen story:
- *   1) Dashboard with local starting temp + AQI (from app.js Open-Meteo cache)
- *   2) While trees grow, numbers ease using species-weighted model estimates
- *   3) Lock "Estimate from your trees"
+ *   1) Local temp + AQI with severity colors (red / orange / green) — CO₂ hidden
+ *   2) After planting, those readings ease toward better severity
+ *   3) Only then reveal CO₂ filtered; lock "Estimate from your trees & local air"
  *
  * Place data: ONLY reads window.__FA_PLACE_CACHE__ (filled before XR8.run).
  */
@@ -12,11 +12,19 @@
 import { SPECIES_INFO } from './tree.js'
 
 let sequenceRunning = false
+/** True once local baseline (temp + AQI) has been shown */
+let baselineShown = false
 /** True once the first grove HUD has locked its numbers */
 let impactRevealDone = false
 
 /** Young AR trees are not full mature yield */
 const MATURITY = 0.35
+
+const SEVERITY = {
+  good: { rgb: [196, 255, 0], glow: '0 0 12px rgba(196, 255, 0, 0.45)' },
+  moderate: { rgb: [255, 168, 48], glow: '0 0 12px rgba(255, 150, 40, 0.45)' },
+  poor: { rgb: [255, 72, 40], glow: '0 0 14px rgba(255, 70, 40, 0.55)' },
+}
 
 function mulberry32(seed) {
   let a = seed >>> 0
@@ -42,38 +50,92 @@ function easeOutCubic(t) {
   return 1 - (1 - t) ** 3
 }
 
-/** Warm “current AQI” → cool “improved” for the dashboard beat */
-const AQI_COLOR_START = [255, 92, 48] // hot orange-red
-const AQI_COLOR_END = [196, 255, 0] // brand lime
-
 function lerpChannel(a, b, t) {
   return Math.round(a + (b - a) * t)
 }
 
-function aqiColorAt(t) {
-  const e = Math.min(1, Math.max(0, t))
-  const r = lerpChannel(AQI_COLOR_START[0], AQI_COLOR_END[0], e)
-  const g = lerpChannel(AQI_COLOR_START[1], AQI_COLOR_END[1], e)
-  const b = lerpChannel(AQI_COLOR_START[2], AQI_COLOR_END[2], e)
-  return `rgb(${r}, ${g}, ${b})`
+function rgbCss(rgb, alpha = 1) {
+  if (alpha >= 1) return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`
 }
 
-function setAqiTone(el, progress) {
-  if (!el) return
-  el.style.color = aqiColorAt(progress)
-  if (progress < 0.15) {
-    el.style.textShadow = '0 0 14px rgba(255, 80, 40, 0.55)'
-  } else if (progress > 0.85) {
-    el.style.textShadow = '0 0 12px rgba(196, 255, 0, 0.45)'
-  } else {
-    el.style.textShadow = 'none'
+function lerpRgb(a, b, t) {
+  return [
+    lerpChannel(a[0], b[0], t),
+    lerpChannel(a[1], b[1], t),
+    lerpChannel(a[2], b[2], t),
+  ]
+}
+
+/**
+ * US AQI bands → continuous red/orange/green tone.
+ * Good ≤50, Moderate ≤100, Unhealthy-sensitive+ → poor.
+ */
+function aqiSeverityRgb(aqi) {
+  const v = Number(aqi)
+  if (!Number.isFinite(v) || v <= 50) {
+    if (v <= 30) return SEVERITY.good.rgb
+    const t = (v - 30) / 20
+    return lerpRgb(SEVERITY.good.rgb, SEVERITY.moderate.rgb, t)
   }
+  if (v <= 100) {
+    const t = (v - 50) / 50
+    return lerpRgb(SEVERITY.moderate.rgb, SEVERITY.poor.rgb, t * 0.55)
+  }
+  if (v <= 150) {
+    const t = (v - 100) / 50
+    return lerpRgb(
+      lerpRgb(SEVERITY.moderate.rgb, SEVERITY.poor.rgb, 0.55),
+      SEVERITY.poor.rgb,
+      t
+    )
+  }
+  return SEVERITY.poor.rgb
 }
 
-function clearAqiTone(el) {
+/**
+ * Heat-focused temp bands (Malaysia-ish outdoor comfort).
+ * Cool ≤27 green, warm ~30 orange, hot ≥34 red.
+ */
+function tempSeverityRgb(tempC) {
+  const v = Number(tempC)
+  if (!Number.isFinite(v) || v <= 27) return SEVERITY.good.rgb
+  if (v <= 30) {
+    const t = (v - 27) / 3
+    return lerpRgb(SEVERITY.good.rgb, SEVERITY.moderate.rgb, t)
+  }
+  if (v <= 34) {
+    const t = (v - 30) / 4
+    return lerpRgb(SEVERITY.moderate.rgb, SEVERITY.poor.rgb, t)
+  }
+  return SEVERITY.poor.rgb
+}
+
+function severityGlow(rgb) {
+  // Prefer red glow when hot/poor, lime when good
+  const redness = rgb[0] - rgb[1]
+  if (redness > 40) return SEVERITY.poor.glow
+  if (rgb[1] > 200 && rgb[0] < 210) return SEVERITY.good.glow
+  return SEVERITY.moderate.glow
+}
+
+function applyTone(el, rgb) {
+  if (!el) return
+  el.style.color = rgbCss(rgb)
+  el.style.textShadow = severityGlow(rgb)
+}
+
+function clearTone(el) {
   if (!el) return
   el.style.color = ''
   el.style.textShadow = ''
+}
+
+function setCo2Deferred(deferred) {
+  const row = document.getElementById('co2-row')
+  if (!row) return
+  row.classList.toggle('is-deferred', deferred)
+  row.setAttribute('aria-hidden', deferred ? 'true' : 'false')
 }
 
 function diminishingReturns(raw, cap) {
@@ -176,10 +238,7 @@ export function computeImpactFromTrees(treeMeta, place) {
   // Higher caps so extra taps still visibly move the numbers
   const co2Kg = diminishingReturns(co2Raw, 95)
   const airDrop = diminishingReturns(airRaw, 48)
-  const airEnd = Math.max(
-    10,
-    Math.round(place.airStart - airDrop)
-  )
+  const airEnd = Math.max(10, Math.round(place.airStart - airDrop))
 
   const baseline = Number(place.baselineTemp.toFixed(1))
   const drop = Number(tempDrop.toFixed(1))
@@ -234,26 +293,132 @@ function startStatusPulse() {
   })
 }
 
-function animateLiveStats(impact, durationMs, els) {
-  const { tempVal, co2Val, aqiVal } = els
-  const t0 = performance.now()
+function showDashboard() {
+  const dashboard = document.getElementById('dashboard')
+  if (!dashboard) return
+  dashboard.classList.add('is-visible')
+  dashboard.setAttribute('aria-hidden', 'false')
+}
 
+function setStatus(text) {
+  const statusMsg = document.getElementById('status-message')
+  const statusDot = document.getElementById('status-dot')
+  if (statusMsg) {
+    statusMsg.textContent = text
+    statusMsg.style.color = '#c4ff00'
+  }
+  if (statusDot) {
+    statusDot.style.background = '#c4ff00'
+    statusDot.style.boxShadow = '0 0 10px #c4ff00'
+  }
+}
+
+function paintLocalReadings(impact, els) {
+  const { tempVal, aqiVal } = els
   if (tempVal) {
     tempVal.textContent = `${impact.baselineTemp.toFixed(1)}°C`
     tempVal.classList.add('warning')
     tempVal.classList.remove('drop')
-  }
-  if (co2Val) {
-    co2Val.textContent = '0.0 kg/year'
-    co2Val.classList.add('warning')
-    co2Val.classList.remove('drop')
+    applyTone(tempVal, tempSeverityRgb(impact.baselineTemp))
   }
   if (aqiVal) {
     aqiVal.textContent = `${impact.airStart}`
     aqiVal.classList.add('warning')
     aqiVal.classList.remove('drop')
-    setAqiTone(aqiVal, 0)
+    applyTone(aqiVal, aqiSeverityRgb(impact.airStart))
   }
+}
+
+function paintLockedImpact(impact, els) {
+  const { tempVal, co2Val, aqiVal } = els
+
+  if (tempVal) {
+    const fromRgb = tempSeverityRgb(impact.baselineTemp)
+    const toRgb = tempSeverityRgb(impact.finalTemp)
+    tempVal.innerHTML =
+      `<span class="stat-from" style="color:${rgbCss(fromRgb, 0.9)}">${impact.baselineTemp.toFixed(1)}°C</span>` +
+      `<span class="stat-arrow">→</span>` +
+      `<span class="stat-to" style="color:${rgbCss(toRgb)}">${impact.finalTemp.toFixed(1)}°C</span>`
+    tempVal.classList.remove('warning')
+    tempVal.classList.add('drop')
+    clearTone(tempVal)
+  }
+
+  if (aqiVal) {
+    const fromRgb = aqiSeverityRgb(impact.airStart)
+    const toRgb = aqiSeverityRgb(impact.airEnd)
+    aqiVal.innerHTML =
+      `<span class="aqi-from" style="color:${rgbCss(fromRgb, 0.9)}">${impact.airStart}</span>` +
+      `<span class="aqi-arrow">→</span>` +
+      `<span class="aqi-to" style="color:${rgbCss(toRgb)}">${impact.airEnd}</span>`
+    aqiVal.classList.remove('warning')
+    aqiVal.classList.add('drop')
+    clearTone(aqiVal)
+  }
+
+  if (co2Val) {
+    co2Val.textContent = `${impact.co2Kg.toFixed(1)} kg/year`
+    co2Val.classList.remove('warning')
+    co2Val.classList.add('drop')
+    clearTone(co2Val)
+  }
+
+  setCo2Deferred(false)
+}
+
+function statusLocal(impact) {
+  if (impact.liveTemp && impact.liveAqi) return 'Local temp & AQI'
+  if (impact.liveTemp) return 'Local temp'
+  if (impact.liveAqi) return 'Local AQI'
+  return 'Local readings'
+}
+
+function statusWorking(impact) {
+  if (impact.liveTemp && impact.liveAqi) return 'Trees working & live local air'
+  if (impact.liveTemp) return 'Trees working & live temp'
+  if (impact.liveAqi) return 'Trees working & live AQI'
+  return 'Trees working…'
+}
+
+function statusLocked(impact) {
+  if (impact.hasGps) return 'Estimate from your trees & local air'
+  return 'Estimate from your trees'
+}
+
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+/**
+ * Show local temp + AQI (severity colors) before planting. CO₂ stays hidden.
+ */
+export async function showLocalBaseline() {
+  const tempVal = document.getElementById('temp-val')
+  const aqiVal = document.getElementById('aqi-val')
+  const co2Val = document.getElementById('co2-val')
+
+  startStatusPulse()
+  const place = await resolvePlaceContext()
+  const impact = computeImpactFromTrees([], place)
+
+  showDashboard()
+  setCo2Deferred(true)
+  if (co2Val) {
+    co2Val.textContent = '—'
+    co2Val.classList.add('warning')
+    co2Val.classList.remove('drop')
+  }
+  setStatus(statusLocal(impact))
+  updateAqiSublabel(impact)
+  paintLocalReadings(impact, { tempVal, aqiVal })
+  baselineShown = true
+}
+
+function animateImprovement(impact, durationMs, els) {
+  const { tempVal, aqiVal } = els
+  const t0 = performance.now()
+
+  paintLocalReadings(impact, els)
 
   return new Promise((resolve) => {
     const tick = (now) => {
@@ -261,16 +426,17 @@ function animateLiveStats(impact, durationMs, els) {
       const e = easeOutCubic(u)
 
       const tempNow = impact.baselineTemp - impact.tempDrop * e
-      const co2Now = impact.co2Kg * e
       const airNow = Math.round(
         impact.airStart + (impact.airEnd - impact.airStart) * e
       )
 
-      if (tempVal) tempVal.textContent = `${tempNow.toFixed(1)}°C`
-      if (co2Val) co2Val.textContent = `${co2Now.toFixed(1)} kg/year`
+      if (tempVal) {
+        tempVal.textContent = `${tempNow.toFixed(1)}°C`
+        applyTone(tempVal, tempSeverityRgb(tempNow))
+      }
       if (aqiVal) {
         aqiVal.textContent = `${airNow}`
-        setAqiTone(aqiVal, e)
+        applyTone(aqiVal, aqiSeverityRgb(airNow))
       }
 
       if (u < 1) {
@@ -283,16 +449,30 @@ function animateLiveStats(impact, durationMs, els) {
   })
 }
 
-function statusWorking(impact) {
-  if (impact.liveTemp && impact.liveAqi) return 'Trees working · live local air'
-  if (impact.liveTemp) return 'Trees working · live temp'
-  if (impact.liveAqi) return 'Trees working · live AQI'
-  return 'Trees working…'
-}
+function revealCo2(impact, co2Val) {
+  setCo2Deferred(false)
+  if (!co2Val) return Promise.resolve()
 
-function statusLocked(impact) {
-  if (impact.hasGps) return 'Estimate from your trees · local air'
-  return 'Estimate from your trees'
+  co2Val.textContent = '0.0 kg/year'
+  co2Val.classList.add('warning')
+  co2Val.classList.remove('drop')
+
+  const durationMs = 1400
+  const t0 = performance.now()
+  return new Promise((resolve) => {
+    const tick = (now) => {
+      const u = Math.min(1, (now - t0) / durationMs)
+      const e = easeOutCubic(u)
+      co2Val.textContent = `${(impact.co2Kg * e).toFixed(1)} kg/year`
+      if (u < 1) requestAnimationFrame(tick)
+      else {
+        co2Val.classList.remove('warning')
+        co2Val.classList.add('drop')
+        resolve()
+      }
+    }
+    requestAnimationFrame(tick)
+  })
 }
 
 /**
@@ -302,70 +482,47 @@ export async function playAwakeningSequence(treeMeta) {
   if (sequenceRunning) return
   sequenceRunning = true
 
-  const dashboard = document.getElementById('dashboard')
-  const statusMsg = document.getElementById('status-message')
-  const statusDot = document.getElementById('status-dot')
   const tempVal = document.getElementById('temp-val')
   const co2Val = document.getElementById('co2-val')
   const aqiVal = document.getElementById('aqi-val')
 
   startStatusPulse()
-
   const placePromise = resolvePlaceContext()
 
   window.setTimeout(async () => {
     const place = await placePromise
     const impact = computeImpactFromTrees(treeMeta, place)
 
-    if (dashboard) {
-      dashboard.classList.add('is-visible')
-      dashboard.setAttribute('aria-hidden', 'false')
-    }
-    if (statusMsg) {
-      statusMsg.textContent = statusWorking(impact)
-      statusMsg.style.color = '#c4ff00'
-    }
-    if (statusDot) {
-      statusDot.style.background = '#c4ff00'
-      statusDot.style.boxShadow = '0 0 10px #c4ff00'
-    }
+    showDashboard()
+    setCo2Deferred(true)
     updateAqiSublabel(impact)
 
-    await animateLiveStats(impact, 6000, { tempVal, co2Val, aqiVal })
+    // Beat 1: local severity first (skip long hold if already shown pre-plant)
+    if (!baselineShown) {
+      setStatus(statusLocal(impact))
+      paintLocalReadings(impact, { tempVal, aqiVal })
+      baselineShown = true
+      await wait(1800)
+    } else {
+      paintLocalReadings(impact, { tempVal, aqiVal })
+      await wait(500)
+    }
+
+    // Beat 2: trees improve temp + AQI (colors follow severity of the live value)
+    setStatus(statusWorking(impact))
+    await animateImprovement(impact, 5500, { tempVal, aqiVal })
 
     const finalImpact = computeImpactFromTrees(treeMeta, place)
 
-    if (statusMsg) {
-      statusMsg.textContent = statusLocked(finalImpact)
-      statusMsg.style.color = '#c4ff00'
-    }
-    if (statusDot) {
-      statusDot.style.background = '#c4ff00'
-      statusDot.style.boxShadow = '0 0 10px #c4ff00'
-    }
+    // Beat 3: only now reveal CO₂
+    setStatus(statusLocked(finalImpact))
     updateAqiSublabel(finalImpact)
-
-    if (tempVal) {
-      tempVal.innerHTML =
-        `${finalImpact.baselineTemp.toFixed(1)}°C <span style="font-size:14px">→</span> ${finalImpact.finalTemp.toFixed(1)}°C`
-      tempVal.classList.remove('warning')
-      tempVal.classList.add('drop')
-    }
-    if (co2Val) {
-      co2Val.textContent = `${finalImpact.co2Kg.toFixed(1)} kg/year`
-      co2Val.classList.remove('warning')
-      co2Val.classList.add('drop')
-    }
-    if (aqiVal) {
-      aqiVal.innerHTML =
-        `<span class="aqi-from">${finalImpact.airStart}</span><span class="aqi-arrow">→</span>${finalImpact.airEnd}`
-      aqiVal.classList.remove('warning')
-      aqiVal.classList.add('drop')
-      clearAqiTone(aqiVal)
-    }
+    paintLockedImpact(finalImpact, { tempVal, aqiVal, co2Val: null })
+    await revealCo2(finalImpact, co2Val)
+    paintLockedImpact(finalImpact, { tempVal, co2Val, aqiVal })
 
     impactRevealDone = true
-  }, 2200)
+  }, baselineShown ? 400 : 2200)
 }
 
 /**
@@ -386,24 +543,9 @@ export async function refreshImpactDisplay(allTreeMeta) {
   const place = await resolvePlaceContext()
   const impact = computeImpactFromTrees(allTreeMeta, place)
 
-  tempVal.innerHTML =
-    `${impact.baselineTemp.toFixed(1)}°C <span style="font-size:14px">→</span> ${impact.finalTemp.toFixed(1)}°C`
-  tempVal.classList.remove('warning')
-  tempVal.classList.add('drop')
-
-  if (co2Val) {
-    co2Val.textContent = `${impact.co2Kg.toFixed(1)} kg/year`
-    co2Val.classList.remove('warning')
-    co2Val.classList.add('drop')
-  }
-  if (aqiVal) {
-    aqiVal.innerHTML =
-      `<span class="aqi-from">${impact.airStart}</span><span class="aqi-arrow">→</span>${impact.airEnd}`
-    aqiVal.classList.remove('warning')
-    aqiVal.classList.add('drop')
-    clearAqiTone(aqiVal)
-  }
+  paintLockedImpact(impact, { tempVal, co2Val, aqiVal })
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
   updateAqiSublabel(impact)
   impactRevealDone = true
+  baselineShown = true
 }
