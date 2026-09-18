@@ -296,8 +296,18 @@ function startStatusPulse() {
 function showDashboard() {
   const dashboard = document.getElementById('dashboard')
   if (!dashboard) return
-  dashboard.classList.add('is-visible')
   dashboard.setAttribute('aria-hidden', 'false')
+  if (dashboard.classList.contains('is-visible')) return
+  // display:none → block, then animate opacity on the next frame
+  dashboard.classList.add('is-visible')
+  dashboard.style.opacity = '0'
+  dashboard.style.transform = 'translateY(-12px)'
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      dashboard.style.opacity = ''
+      dashboard.style.transform = ''
+    })
+  })
 }
 
 function setStatus(text) {

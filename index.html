@@ -145,8 +145,6 @@
     -->
     <canvas id="camerafeed"></canvas>
 
-    <p class="instruction hidden" id="instruction">Tap to awaken the forest</p>
-
     <!-- How-to (after START AR, before planting) -->
     <div
       id="howto-modal"
@@ -248,42 +246,48 @@
 
       <!--
         Environmental HUD:
-        - LOCAL TEMP / AQI start from Open-Meteo when GPS is available
-        - CO₂ filtered + air improvement are estimates from planted trees
+        - LOCAL TEMP / AQI first (severity colors); CO₂ after trees improve
+        - Tap hint sits under the dashboard so they don’t overlap
       -->
-      <div class="dashboard" id="dashboard" aria-hidden="true">
-        <div class="status-text">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-message">Awaiting deployment</span>
+      <div class="hud-top" id="hud-top">
+        <div class="dashboard" id="dashboard" aria-hidden="true">
+          <div class="status-text">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-message">Awaiting deployment</span>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-label-block">
+              <span class="stat-label">LOCAL TEMP</span>
+            </div>
+            <span class="stat-value warning" id="temp-val">—°C</span>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-label-block">
+              <span class="stat-label">AIR AQI</span>
+              <span class="stat-sublabel" id="aqi-sublabel"
+                >Turn on location to read your area’s AQI</span
+              >
+            </div>
+            <span class="stat-value warning" id="aqi-val">—</span>
+          </div>
+
+          <div
+            class="stat-row is-deferred"
+            id="co2-row"
+            aria-hidden="true"
+          >
+            <div class="stat-label-block">
+              <span class="stat-label">CO₂ FILTERED</span>
+            </div>
+            <span class="stat-value warning" id="co2-val">—</span>
+          </div>
         </div>
 
-        <div class="stat-row">
-          <div class="stat-label-block">
-            <span class="stat-label">LOCAL TEMP</span>
-          </div>
-          <span class="stat-value warning" id="temp-val">—°C</span>
-        </div>
-
-        <div class="stat-row">
-          <div class="stat-label-block">
-            <span class="stat-label">AIR AQI</span>
-            <span class="stat-sublabel" id="aqi-sublabel"
-              >Turn on location to read your area’s AQI</span
-            >
-          </div>
-          <span class="stat-value warning" id="aqi-val">—</span>
-        </div>
-
-        <div
-          class="stat-row is-deferred"
-          id="co2-row"
-          aria-hidden="true"
-        >
-          <div class="stat-label-block">
-            <span class="stat-label">CO₂ FILTERED</span>
-          </div>
-          <span class="stat-value warning" id="co2-val">—</span>
-        </div>
+        <p class="instruction hidden" id="instruction">
+          Tap to awaken the forest
+        </p>
       </div>
 
     </div>
