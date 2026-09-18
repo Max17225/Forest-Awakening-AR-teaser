@@ -250,43 +250,47 @@
           ×
         </button>
 
-        <h2 id="species-panel-heading" class="info-heading">More info</h2>
+        <div class="species-panel-scroll">
+          <h2 id="species-panel-heading" class="info-heading">More info</h2>
 
-        <section class="info-section" aria-labelledby="trees-section-title">
-          <h3 id="trees-section-title" class="info-section-title">Trees</h3>
-          <div id="species-tabs" class="species-tabs" role="tablist"></div>
-        </section>
+          <section class="info-section" aria-labelledby="trees-section-title">
+            <h3 id="trees-section-title" class="info-section-title">Trees</h3>
+            <div id="species-tabs" class="species-tabs" role="tablist"></div>
+          </section>
 
-        <section class="info-section" aria-labelledby="species-panel-title">
-          <h4 id="species-panel-title" class="species-panel-title">
-            Rhu <span class="species-sci">Casuarina equisetifolia</span>
-          </h4>
+          <section class="info-section" aria-labelledby="species-panel-title">
+            <h4 id="species-panel-title" class="species-panel-title">
+              Rhu <span class="species-sci">Casuarina equisetifolia</span>
+            </h4>
 
-          <div class="species-panel-body">
-            <div class="species-preview-wrap">
-              <canvas
-                id="species-preview-canvas"
-                width="200"
-                height="240"
-              ></canvas>
+            <div class="species-panel-body">
+              <div class="species-preview-wrap">
+                <canvas
+                  id="species-preview-canvas"
+                  width="200"
+                  height="240"
+                ></canvas>
+              </div>
+              <div id="species-trait-bars" class="species-trait-bars"></div>
             </div>
-            <div id="species-trait-bars" class="species-trait-bars"></div>
-          </div>
 
-          <p class="species-panel-hint">
-            Bars compare relative leaf traits that help clean air (higher % ≈
-            stronger for that trait). These are educational estimates &amp; not
-            lab readings.
-          </p>
-        </section>
+            <p class="species-panel-hint">
+              Bars compare relative leaf traits that help clean air (higher % ≈
+              stronger for that trait). These are educational estimates &amp; not
+              lab readings.
+            </p>
+          </section>
 
-        <section class="info-section" aria-labelledby="aqi-ref-title">
-          <h3 id="aqi-ref-title" class="info-section-title">
-            Air quality index
-          </h3>
-          <p class="info-section-kicker">Reference of colours / health levels</p>
-          <div id="aqi-legend" class="aqi-legend"></div>
-        </section>
+          <section class="info-section" aria-labelledby="aqi-ref-title">
+            <h3 id="aqi-ref-title" class="info-section-title">
+              Air quality index
+            </h3>
+            <p class="info-section-kicker">
+              Reference of colours / health levels
+            </p>
+            <div id="aqi-legend" class="aqi-legend"></div>
+          </section>
+        </div>
       </div>
     </div>
 

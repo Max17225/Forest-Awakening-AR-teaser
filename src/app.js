@@ -72,7 +72,7 @@ function fetchLiveAqi(lat, lon) {
     .catch(() => null)
 }
 
-/** Reverse-geocode GPS → area label via OpenStreetMap Nominatim. */
+/** Reverse-geocode GPS → city/town label (AQI is area-scale, not street). */
 function fetchPlaceLabel(lat, lon) {
   const url =
     `https://nominatim.openstreetmap.org/reverse` +
@@ -80,7 +80,7 @@ function fetchPlaceLabel(lat, lon) {
     `&lon=${encodeURIComponent(lon)}` +
     `&format=jsonv2` +
     `&addressdetails=1` +
-    `&zoom=14` +
+    `&zoom=12` +
     `&accept-language=en`
   return fetch(url, {
     headers: {
@@ -91,20 +91,20 @@ function fetchPlaceLabel(lat, lon) {
     .then((data) => {
       if (!data) return null
       const a = data.address || {}
+      // Prefer city-scale names — matches how coarse AQI grids feel to users
       const area =
-        a.suburb ||
-        a.neighbourhood ||
-        a.city_district ||
         a.city ||
         a.town ||
-        a.village ||
         a.municipality ||
+        a.city_district ||
+        a.village ||
+        a.suburb ||
+        a.neighbourhood ||
         a.county ||
         null
       const region = a.state || a.region || null
       const country = a.country || null
 
-      // Prefer "Suburb, City" or "City, Country" — skip repeating same name
       const parts = []
       if (area) parts.push(area)
       if (region && region !== area) parts.push(region)
