@@ -235,8 +235,8 @@ body {
 }
 
 /*
-  Impact dashboard — slides in after the grove starts growing.
-  Temp + AQI start from Open-Meteo when available; CO₂ / improvements are species-weighted models.
+  Impact dashboard — local temp + AQI first (severity colors), then trees
+  ease those readings and only afterward reveal CO₂ filtered.
 */
 .dashboard {
   position: absolute;
@@ -342,16 +342,22 @@ body {
   flex-shrink: 0;
 }
 
-.stat-value .aqi-from {
-  opacity: 0.55;
+.stat-value .aqi-from,
+.stat-value .stat-from {
   font-size: 12px;
   margin-right: 2px;
 }
 
-.stat-value .aqi-arrow {
+.stat-value .aqi-arrow,
+.stat-value .stat-arrow {
   opacity: 0.55;
   font-size: 12px;
   margin: 0 4px;
+}
+
+.stat-value .aqi-to,
+.stat-value .stat-to {
+  font-weight: 700;
 }
 
 .stat-value.warning {
@@ -362,22 +368,9 @@ body {
   color: var(--lime);
 }
 
-/* AQI: hot “current” → cool “improved” (inline tone during animation) */
-#aqi-val.warning {
-  color: #ff5c30;
-  text-shadow: 0 0 14px rgba(255, 80, 40, 0.55);
-}
-
-#aqi-val.drop {
-  color: var(--lime);
-  text-shadow: 0 0 12px rgba(196, 255, 0, 0.35);
-}
-
-.stat-value.drop .aqi-from,
-.stat-value.drop .aqi-arrow {
-  color: rgba(255, 120, 70, 0.85);
-  text-shadow: none;
-  opacity: 0.9;
+/* CO₂ stays hidden until trees have improved temp + AQI */
+.stat-row.is-deferred {
+  display: none;
 }
 
 
@@ -604,6 +597,14 @@ body {
   background: rgba(196, 255, 0, 0.18);
   color: #c4ff00;
   box-shadow: 0 0 12px rgba(196, 255, 0, 0.2);
+}
+
+/* Odd last tab (e.g. 5th of 5): same size, centered under the grid */
+.species-tab:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  width: calc((100% - 6px) / 2);
+  max-width: 100%;
+  justify-self: center;
 }
 
 @media (max-width: 380px) {

@@ -21,6 +21,7 @@ import {
   showSpeciesInfoButton,
 } from './species-panel.js'
 import { initHowtoModal, showHowtoModal } from './howto-modal.js'
+import { showLocalBaseline } from './sequence.js'
 
 // XR8.Threejs expects THREE on window (official 8th Wall placeground pattern)
 window.THREE = { ...THREE }
@@ -289,6 +290,8 @@ const startExperience = () => {
       const instruction = document.getElementById('instruction')
       if (instruction) instruction.classList.remove('hidden')
       showSpeciesInfoButton()
+      // Local severity first — CO₂ waits until trees improve readings
+      showLocalBaseline()
     },
   })
   XRExtras.Loading.showLoading({ onxrloaded: onXrLoaded })

@@ -266,19 +266,23 @@
 
         <div class="stat-row">
           <div class="stat-label-block">
-            <span class="stat-label">CO₂ FILTERED</span>
-          </div>
-          <span class="stat-value warning" id="co2-val">0.0 kg/year</span>
-        </div>
-
-        <div class="stat-row">
-          <div class="stat-label-block">
             <span class="stat-label">AIR AQI</span>
             <span class="stat-sublabel" id="aqi-sublabel"
               >Turn on location to read your area’s AQI</span
             >
           </div>
           <span class="stat-value warning" id="aqi-val">—</span>
+        </div>
+
+        <div
+          class="stat-row is-deferred"
+          id="co2-row"
+          aria-hidden="true"
+        >
+          <div class="stat-label-block">
+            <span class="stat-label">CO₂ FILTERED</span>
+          </div>
+          <span class="stat-value warning" id="co2-val">—</span>
         </div>
       </div>
 
