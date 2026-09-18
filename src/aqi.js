@@ -63,3 +63,14 @@ export function aqiBand(aqi) {
   if (!Number.isFinite(v)) return AQI_BANDS[0]
   return AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1]
 }
+
+/**
+ * Short place name for splash + dashboard — the area the AQI/temp
+ * reading was taken for (first segment of the Nominatim label).
+ * @param {string | null | undefined} placeLabel
+ */
+export function readingPlaceName(placeLabel) {
+  if (!placeLabel) return null
+  const part = String(placeLabel).split(',')[0].trim()
+  return part || null
+}

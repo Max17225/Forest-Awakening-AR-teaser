@@ -22,7 +22,7 @@ import {
 } from './species-panel.js'
 import { initHowtoModal, showHowtoModal } from './howto-modal.js'
 import { showLocalBaseline } from './sequence.js'
-import { aqiBand } from './aqi.js'
+import { aqiBand, readingPlaceName } from './aqi.js'
 
 // XR8.Threejs expects THREE on window (official 8th Wall placeground pattern)
 window.THREE = { ...THREE }
@@ -221,7 +221,7 @@ function paintSplashAqi() {
 
   if (typeof aqi === 'number' && Number.isFinite(aqi)) {
     const band = aqiBand(aqi)
-    const area = (place || 'Your area').split(',')[0].trim().toUpperCase()
+    const area = (readingPlaceName(place) || 'Your area').toUpperCase()
     meta.textContent = `${area} · LIVE AQI`
     num.textContent = String(Math.round(aqi))
     num.style.color = `rgb(${band.text.join(',')})`
@@ -230,7 +230,7 @@ function paintSplashAqi() {
   }
 
   if (cache.coords) {
-    meta.textContent = `${(place || 'Your area').split(',')[0].trim().toUpperCase()} · AQI`
+    meta.textContent = `${(readingPlaceName(place) || 'Your area').toUpperCase()} · AQI`
     num.textContent = '—'
     num.style.color = ''
     status.textContent = 'Location on, AQI unavailable right now.'

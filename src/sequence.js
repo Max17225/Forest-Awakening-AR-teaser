@@ -10,7 +10,7 @@
  */
 
 import { SPECIES_INFO } from './tree.js'
-import { aqiBand } from './aqi.js'
+import { aqiBand, readingPlaceName } from './aqi.js'
 
 let sequenceRunning = false
 /** True once local baseline (temp + AQI) has been shown */
@@ -236,7 +236,7 @@ export function computeImpactFromTrees(treeMeta, place) {
   }
 }
 
-/** Headline of the dashboard: where these readings come from. */
+/** Headline of the dashboard: same reading place as Start AR. */
 function updatePlaceLabel(impact) {
   const el = document.getElementById('place-label')
   if (!el) return
@@ -244,7 +244,8 @@ function updatePlaceLabel(impact) {
     el.textContent = 'Location off'
     return
   }
-  el.textContent = impact.placeLabel || 'Your area'
+  el.textContent =
+    readingPlaceName(impact.placeLabel) || impact.placeLabel || 'Your area'
 }
 
 function startStatusPulse() {
