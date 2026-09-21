@@ -464,12 +464,9 @@ body {
   display: none;
 }
 
-/* Drop divider under the last visible metric when footer is showing */
-.dashboard.has-caption #co2-row:not(.is-deferred),
-.dashboard.has-caption.is-baseline #aqi-row {
+/* Last visible metric keeps its normal bottom rule; caption sits below it */
+.dashboard.has-caption .stat-row:not(.is-deferred):last-of-type {
   margin-bottom: 0;
-  border-bottom: none;
-  padding-bottom: 0;
 }
 
 .stat-label-block {
@@ -520,11 +517,12 @@ body {
   color: var(--lime);
 }
 
-/* Caption footer — ruled off from metrics so it reads as a deliberate note */
+/* Caption sits below the last metric’s rule — don’t steal that row’s padding */
 .dash-footer {
-  margin: 2px 0 0;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 8px 0 0;
+  padding-top: 0;
+  border-top: none;
+  min-width: 0;
 }
 
 .dash-footer.hidden {
@@ -533,11 +531,14 @@ body {
 
 .dash-caption {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.2px;
-  line-height: 1.4;
+  letter-spacing: 0.15px;
+  line-height: 1.35;
   color: rgba(208, 213, 216, 0.72);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dash-caption.hidden {
