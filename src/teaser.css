@@ -464,8 +464,9 @@ body {
   display: none;
 }
 
-/* Last visible metric keeps its normal bottom rule; caption sits below it */
-.dashboard.has-caption .stat-row:not(.is-deferred):last-of-type {
+/* Keep the last metric’s padding + bottom rule; only collapse its margin */
+.dashboard.has-caption #co2-row:not(.is-deferred),
+.dashboard.has-caption.is-baseline #aqi-row {
   margin-bottom: 0;
 }
 
@@ -533,12 +534,10 @@ body {
   margin: 0;
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.15px;
-  line-height: 1.35;
+  letter-spacing: 0;
+  line-height: 1.3;
   color: rgba(208, 213, 216, 0.72);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .dash-caption.hidden {
