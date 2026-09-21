@@ -205,6 +205,17 @@ const isMobileDevice = () =>
     navigator.userAgent
   )
 
+/** True while splash is up — location retry must never run mid-AR */
+function isSplashActive() {
+  return !window.__FA_SPLASH_DISMISSED__
+}
+
+function setSplashLocationRetryVisible(visible) {
+  const btn = document.getElementById('splash-location-retry')
+  if (!btn) return
+  btn.classList.toggle('hidden', !visible)
+}
+
 function paintSplashAqi() {
   const meta = document.getElementById('splash-aqi-meta')
   const num = document.getElementById('splash-aqi-num')
@@ -226,6 +237,7 @@ function paintSplashAqi() {
     num.textContent = String(Math.round(aqi))
     num.style.color = `rgb(${band.text.join(',')})`
     status.textContent = band.splashLine
+    setSplashLocationRetryVisible(false)
     return
   }
 
@@ -234,6 +246,8 @@ function paintSplashAqi() {
     num.textContent = '—'
     num.style.color = ''
     status.textContent = 'Location on, AQI unavailable right now.'
+    // Coords exist — no location prompt needed; AQI API may just be down
+    setSplashLocationRetryVisible(false)
     return
   }
 
@@ -241,6 +255,84 @@ function paintSplashAqi() {
   num.textContent = '—'
   num.style.color = ''
   status.textContent = 'Turn on location to read the air around you.'
+  setSplashLocationRetryVisible(isSplashActive())
+}
+
+let placeRetryInFlight = false
+
+/**
+ * Re-run GPS + AQI prefetch while splash is still up.
+ * Safe: never called after START AR (see isSplashActive).
+ */
+async function retryPlaceContext({ fromPermissionChange = false } = {}) {
+  if (!isSplashActive() || placeRetryInFlight) return
+  if (window.__FA_PLACE_CACHE__?.coords) {
+    paintSplashAqi()
+    return
+  }
+
+  const btn = document.getElementById('splash-location-retry')
+  placeRetryInFlight = true
+  if (btn) {
+    btn.disabled = true
+    btn.textContent = fromPermissionChange ? 'Updating…' : 'Checking…'
+  }
+
+  const meta = document.getElementById('splash-aqi-meta')
+  const status = document.getElementById('splash-aqi-status')
+  if (meta) meta.textContent = 'CHECKING · AQI'
+  if (status) status.textContent = 'Checking the air around you…'
+
+  try {
+    await prefetchPlaceContext()
+  } finally {
+    placeRetryInFlight = false
+    if (btn) {
+      btn.disabled = false
+      btn.textContent = 'Enable location'
+    }
+    paintSplashAqi()
+  }
+}
+
+function armSplashLocationRetry() {
+  const btn = document.getElementById('splash-location-retry')
+  if (btn && btn.dataset.armed !== 'true') {
+    btn.dataset.armed = 'true'
+    btn.addEventListener('click', () => {
+      retryPlaceContext()
+    })
+  }
+
+  // If the user flips location on in browser settings, refresh splash AQI
+  // without requiring a full page reload. Still pre-AR only.
+  if (
+    typeof navigator.permissions?.query === 'function' &&
+    !window.__FA_GEO_PERM_WATCH__
+  ) {
+    window.__FA_GEO_PERM_WATCH__ = true
+    navigator.permissions
+      .query({ name: 'geolocation' })
+      .then((status) => {
+        status.addEventListener('change', () => {
+          if (!isSplashActive()) return
+          if (status.state === 'granted') {
+            retryPlaceContext({ fromPermissionChange: true })
+          } else if (status.state === 'denied' || status.state === 'prompt') {
+            // Clear stale success only if we somehow had no coords yet
+            paintSplashAqi()
+          }
+        })
+        // Already granted but first prefetch missed (timeout / dismiss) —
+        // one more attempt when splash appears.
+        if (status.state === 'granted' && !window.__FA_PLACE_CACHE__?.coords) {
+          retryPlaceContext({ fromPermissionChange: true })
+        }
+      })
+      .catch(() => {
+        // Safari / older browsers may reject geolocation permission query
+      })
+  }
 }
 
 const setupDesktopSplash = () => {
@@ -294,6 +386,8 @@ const revealSplashAfterLoad = () => {
   startBtn.disabled = false
   startBtn.textContent = 'START AR'
   paintSplashAqi()
+  // Retry GPS only while splash is visible — never mid-AR
+  armSplashLocationRetry()
 
   if (startBtn.dataset.armed === 'true') return
   startBtn.dataset.armed = 'true'
@@ -301,11 +395,13 @@ const revealSplashAfterLoad = () => {
     if (startBtn.disabled) return
     startBtn.disabled = true
     window.__FA_SPLASH_DISMISSED__ = true
+    setSplashLocationRetryVisible(false)
     dismissSplash()
   })
 }
 
 const dismissSplash = () => {
+  setSplashLocationRetryVisible(false)
   const splashScreen = document.getElementById('splash-screen')
   if (splashScreen) {
     splashScreen.style.opacity = '0'
