@@ -168,6 +168,17 @@ body {
   filter: drop-shadow(0 0 8px rgba(196, 255, 0, 0.45));
 }
 
+.splash-tagline {
+  margin: 14px 0 0;
+  max-width: 22em;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+  line-height: 1.45;
+  color: rgba(208, 213, 216, 0.78);
+  text-align: left;
+}
+
 /*
   AQI in the upper-middle of the column, left-aligned like the mock.
   Larger bottom margin keeps it above the CTA cluster.
@@ -448,7 +459,14 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stat-row:last-child {
+/* CO₂ stays hidden until trees have improved temp + AQI */
+.stat-row.is-deferred {
+  display: none;
+}
+
+/* Drop divider under the last visible metric */
+#co2-row:not(.is-deferred),
+.dashboard.is-baseline #aqi-row {
   margin-bottom: 0;
   border-bottom: none;
   padding-bottom: 0;
@@ -502,9 +520,21 @@ body {
   color: var(--lime);
 }
 
-/* CO₂ stays hidden until trees have improved temp + AQI */
-.stat-row.is-deferred {
+.dash-caption {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+  color: rgba(208, 213, 216, 0.72);
+}
+
+.dash-caption.hidden {
   display: none;
+}
+
+.dash-caption-impact {
+  color: rgba(196, 255, 0, 0.78);
 }
 
 
