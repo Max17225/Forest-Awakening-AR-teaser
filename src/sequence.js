@@ -115,6 +115,24 @@ function setCo2Deferred(deferred) {
   row.setAttribute('aria-hidden', deferred ? 'true' : 'false')
 }
 
+/**
+ * Dashboard captions:
+ *   'pre'  — before planting ("Your air right now…")
+ *   'post' — after impact reveal ("Your grove is already cooling…")
+ *   'none' — hide both (e.g. mid-sequence)
+ */
+function setDashCaptions(mode) {
+  const dashboard = document.getElementById('dashboard')
+  const pre = document.getElementById('dash-pre-plant')
+  const post = document.getElementById('dash-post-plant')
+  if (pre) pre.classList.toggle('hidden', mode !== 'pre')
+  if (post) post.classList.toggle('hidden', mode !== 'post')
+  if (dashboard) {
+    dashboard.classList.toggle('is-baseline', mode === 'pre')
+    dashboard.classList.toggle('is-impact', mode === 'post')
+  }
+}
+
 function diminishingReturns(raw, cap) {
   return cap * (1 - Math.exp(-raw / cap))
 }
@@ -384,6 +402,7 @@ export async function showLocalBaseline() {
   setStatus(statusLocal(impact))
   updatePlaceLabel(impact)
   paintLocalReadings(impact, { tempVal, aqiVal })
+  setDashCaptions('pre')
   baselineShown = true
 }
 
@@ -469,6 +488,7 @@ export async function playAwakeningSequence(treeMeta) {
     showDashboard()
     setCo2Deferred(true)
     updatePlaceLabel(impact)
+    setDashCaptions('pre')
 
     // Beat 1: local severity first (skip long hold if already shown pre-plant)
     if (!baselineShown) {
@@ -483,6 +503,7 @@ export async function playAwakeningSequence(treeMeta) {
 
     // Beat 2: trees improve temp + AQI (colors follow severity of the live value)
     setStatus(statusWorking())
+    setDashCaptions('none')
     await animateImprovement(impact, 5500, { tempVal, aqiVal })
 
     const finalImpact = computeImpactFromTrees(treeMeta, place)
@@ -493,6 +514,7 @@ export async function playAwakeningSequence(treeMeta) {
     paintLockedImpact(finalImpact, { tempVal, aqiVal, co2Val: null })
     await revealCo2(finalImpact, co2Val)
     paintLockedImpact(finalImpact, { tempVal, co2Val, aqiVal })
+    setDashCaptions('post')
 
     impactRevealDone = true
   }, baselineShown ? 400 : 2200)
@@ -519,6 +541,7 @@ export async function refreshImpactDisplay(allTreeMeta) {
   paintLockedImpact(impact, { tempVal, co2Val, aqiVal })
   if (statusMsg) statusMsg.textContent = statusLocked(impact)
   updatePlaceLabel(impact)
+  setDashCaptions('post')
   impactRevealDone = true
   baselineShown = true
 }
