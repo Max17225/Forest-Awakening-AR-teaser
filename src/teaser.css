@@ -464,9 +464,9 @@ body {
   display: none;
 }
 
-/* Drop divider under the last visible metric */
-#co2-row:not(.is-deferred),
-.dashboard.is-baseline #aqi-row {
+/* Drop divider under the last visible metric when footer is showing */
+.dashboard.has-caption #co2-row:not(.is-deferred),
+.dashboard.has-caption.is-baseline #aqi-row {
   margin-bottom: 0;
   border-bottom: none;
   padding-bottom: 0;
@@ -520,8 +520,19 @@ body {
   color: var(--lime);
 }
 
+/* Caption footer — ruled off from metrics so it reads as a deliberate note */
+.dash-footer {
+  margin: 2px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dash-footer.hidden {
+  display: none;
+}
+
 .dash-caption {
-  margin: 4px 0 0;
+  margin: 0;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2px;

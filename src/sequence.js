@@ -119,15 +119,19 @@ function setCo2Deferred(deferred) {
  * Dashboard captions:
  *   'pre'  — before planting ("Your air right now…")
  *   'post' — after impact reveal ("Your grove is already cooling…")
- *   'none' — hide both (e.g. mid-sequence)
+ *   'none' — hide footer (e.g. mid-sequence)
  */
 function setDashCaptions(mode) {
   const dashboard = document.getElementById('dashboard')
+  const footer = document.getElementById('dash-footer')
   const pre = document.getElementById('dash-pre-plant')
   const post = document.getElementById('dash-post-plant')
+  const showFooter = mode === 'pre' || mode === 'post'
+  if (footer) footer.classList.toggle('hidden', !showFooter)
   if (pre) pre.classList.toggle('hidden', mode !== 'pre')
   if (post) post.classList.toggle('hidden', mode !== 'post')
   if (dashboard) {
+    dashboard.classList.toggle('has-caption', showFooter)
     dashboard.classList.toggle('is-baseline', mode === 'pre')
     dashboard.classList.toggle('is-impact', mode === 'post')
   }
