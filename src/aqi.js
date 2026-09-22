@@ -13,7 +13,7 @@ export const AQI_BANDS = [
     range: '0 – 50',
     swatch: '#6cc24a',
     text: [126, 217, 87],
-    splashLine: 'Good. Right where you stand.',
+    splashLine: 'Good.',
   },
   {
     max: 100,
@@ -21,7 +21,7 @@ export const AQI_BANDS = [
     range: '51 – 100',
     swatch: '#ffe94f',
     text: [255, 233, 79],
-    splashLine: 'Moderate. Right where you stand.',
+    splashLine: 'Moderate.',
   },
   {
     max: 150,
@@ -29,7 +29,7 @@ export const AQI_BANDS = [
     range: '101 – 150',
     swatch: '#ef8b3f',
     text: [255, 159, 69],
-    splashLine: 'Unhealthy for sensitive groups. Right where you stand.',
+    splashLine: 'Unhealthy for sensitive groups.',
   },
   {
     max: 200,
@@ -37,7 +37,7 @@ export const AQI_BANDS = [
     range: '151 – 200',
     swatch: '#e8503a',
     text: [255, 92, 71],
-    splashLine: 'Unhealthy. Right where you stand.',
+    splashLine: 'Unhealthy.',
   },
   {
     max: 300,
@@ -45,7 +45,7 @@ export const AQI_BANDS = [
     range: '201 – 300',
     swatch: '#7d5295',
     text: [181, 127, 216],
-    splashLine: 'Very unhealthy. Right where you stand.',
+    splashLine: 'Very unhealthy.',
   },
   {
     max: Infinity,
@@ -53,7 +53,7 @@ export const AQI_BANDS = [
     range: '301 – 500',
     swatch: '#7a2436',
     text: [224, 85, 107],
-    splashLine: 'Hazardous. Right where you stand.',
+    splashLine: 'Hazardous.',
   },
 ]
 
